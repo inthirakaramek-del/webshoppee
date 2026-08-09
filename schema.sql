@@ -108,3 +108,14 @@ WITH CHECK (true);
 -- Enable Realtime for page_visits table
 ALTER PUBLICATION supabase_realtime ADD TABLE page_visits;
 
+-- Storage policies for 'fashion-images' bucket
+-- Note: Create the bucket named 'fashion-images' as a Public bucket in your Supabase Storage dashboard first.
+CREATE POLICY "Allow public uploads on fashion-images"
+ON storage.objects FOR INSERT
+TO public
+WITH CHECK (bucket_id = 'fashion-images');
+
+CREATE POLICY "Allow public read access on fashion-images"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'fashion-images');

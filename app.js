@@ -698,6 +698,25 @@ function populateCollectionDropdowns() {
   }
 }
 
+// Helper function to upload files to Supabase Storage
+async function uploadImageFile(file) {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+  const filePath = `uploads/${fileName}`;
+
+  const { data, error } = await supabaseClient.storage
+    .from('fashion-images')
+    .upload(filePath, file);
+
+  if (error) throw error;
+
+  const { data: urlData } = supabaseClient.storage
+    .from('fashion-images')
+    .getPublicUrl(filePath);
+
+  return urlData.publicUrl;
+}
+
 // --- MODAL UTILITIES & FORM SUBMIT HANDLERS ---
 function setupModalBindings() {
   // Bind toggles for admin dashboard Collections/Products view
@@ -777,6 +796,10 @@ window.openCollectionModal = function(id = null) {
     descInput.value = '';
   }
 
+  // Clear file input
+  const fileInput = document.getElementById('collection-image-file');
+  if (fileInput) fileInput.value = '';
+
   openModal('collection-modal');
 };
 
@@ -784,10 +807,30 @@ async function handleCollectionSubmit(e) {
   e.preventDefault();
   const id = document.getElementById('collection-edit-id').value;
   const title = document.getElementById('collection-title-input').value.trim();
-  const image = document.getElementById('collection-image-input').value.trim();
   const description = document.getElementById('collection-desc-input').value.trim();
+  
+  const fileInput = document.getElementById('collection-image-file');
+  let image = document.getElementById('collection-image-input').value.trim();
 
   try {
+    // If a file is chosen, upload it to Supabase Storage first
+    if (fileInput && fileInput.files.length > 0) {
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Uploading Image...";
+      submitBtn.disabled = true;
+      try {
+        image = await uploadImageFile(fileInput.files[0]);
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+    }
+
+    if (!image) {
+      alert("Please choose an image file to upload OR paste an image URL.");
+      return;
+    }
     let result;
     if (id) {
       // UPDATE
@@ -871,6 +914,10 @@ window.openProductModal = function(id = null) {
     linkInput.value = '';
   }
 
+  // Clear file input
+  const fileInput = document.getElementById('product-image-file');
+  if (fileInput) fileInput.value = '';
+
   openModal('product-modal');
 };
 
@@ -881,10 +928,30 @@ async function handleProductSubmit(e) {
   const category = document.getElementById('product-category-select').value;
   const name = document.getElementById('product-name-input').value.trim();
   const price = parseFloat(document.getElementById('product-price-input').value);
-  const image = document.getElementById('product-image-input').value.trim();
   const affiliate_link = document.getElementById('product-link-input').value.trim();
 
+  const fileInput = document.getElementById('product-image-file');
+  let image = document.getElementById('product-image-input').value.trim();
+
   try {
+    // If a file is chosen, upload it to Supabase Storage first
+    if (fileInput && fileInput.files.length > 0) {
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Uploading Image...";
+      submitBtn.disabled = true;
+      try {
+        image = await uploadImageFile(fileInput.files[0]);
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+    }
+
+    if (!image) {
+      alert("Please choose an image file to upload OR paste an image URL.");
+      return;
+    }
     let result;
     if (id) {
       // UPDATE
