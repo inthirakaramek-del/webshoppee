@@ -19,7 +19,7 @@ if (isConfigured) {
   // Resolve raw project ID (e.g. kfxjglkekkhzeaydnvfr) into full Supabase URL if needed
   let resolvedUrl = CONFIG.SUPABASE_URL.trim();
   if (!resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://')) {
-    resolvedUrl = `https://${resolvedUrl}.supabase.co`;
+    resolvedUrl = `https://${resolvedUrl}.supabaseClient.co`;
   }
   
   // Initialize Supabase Client
@@ -159,7 +159,7 @@ async function fetchInitialData() {
 
 async function fetchCollections() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('collections')
       .select('*')
       .order('title', { ascending: true });
@@ -174,7 +174,7 @@ async function fetchCollections() {
 
 async function fetchProducts() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('products')
       .select('*')
       .order('name', { ascending: true });
@@ -189,7 +189,7 @@ async function fetchProducts() {
 async function trackAndFetchPageViews() {
   try {
     // 1. Fetch current view count
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('page_visits')
       .select('count')
       .eq('id', 'home')
@@ -203,7 +203,7 @@ async function trackAndFetchPageViews() {
     const isTracked = sessionStorage.getItem('la_maison_tracked') === 'true';
     if (!adminLoggedIn && !isTracked) {
       currentCount++;
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseClient
         .from('page_visits')
         .update({ count: currentCount, updated_at: new Date().toISOString() })
         .eq('id', 'home');
@@ -791,13 +791,13 @@ async function handleCollectionSubmit(e) {
     let result;
     if (id) {
       // UPDATE
-      result = await supabase
+      result = await supabaseClient
         .from('collections')
         .update({ title, image, description })
         .eq('id', id);
     } else {
       // INSERT
-      result = await supabase
+      result = await supabaseClient
         .from('collections')
         .insert([{ title, image, description }]);
     }
@@ -817,7 +817,7 @@ window.deleteCollection = async function(id, title) {
   if (!confirmed) return;
 
   try {
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('collections')
       .delete()
       .eq('id', id);
@@ -888,13 +888,13 @@ async function handleProductSubmit(e) {
     let result;
     if (id) {
       // UPDATE
-      result = await supabase
+      result = await supabaseClient
         .from('products')
         .update({ collection_id, category, name, price, image, affiliate_link })
         .eq('id', id);
     } else {
       // INSERT
-      result = await supabase
+      result = await supabaseClient
         .from('products')
         .insert([{ collection_id, category, name, price, image, affiliate_link }]);
     }
@@ -914,7 +914,7 @@ window.deleteProduct = async function(id, name) {
   if (!confirmed) return;
 
   try {
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('products')
       .delete()
       .eq('id', id);
