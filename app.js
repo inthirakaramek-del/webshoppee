@@ -19,7 +19,7 @@ if (isConfigured) {
   // Resolve raw project ID (e.g. kfxjglkekkhzeaydnvfr) into full Supabase URL if needed
   let resolvedUrl = CONFIG.SUPABASE_URL.trim();
   if (!resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://')) {
-    resolvedUrl = `https://${resolvedUrl}.supabaseClient.co`;
+    resolvedUrl = `https://${resolvedUrl}.supabase.co`;
   }
   
   // Initialize Supabase Client
