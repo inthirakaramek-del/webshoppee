@@ -717,6 +717,29 @@ async function uploadImageFile(file) {
   return urlData.publicUrl;
 }
 
+// Helper function to delete files from Supabase Storage
+async function deleteImageFile(imageUrl) {
+  if (!imageUrl) return;
+  
+  // Extract path if it is a Supabase public storage URL
+  // format: https://<project>.supabase.co/storage/v1/object/public/fashion-images/uploads/filename.ext
+  const storageIndicator = '/storage/v1/object/public/fashion-images/';
+  if (imageUrl.includes(storageIndicator)) {
+    const filePath = imageUrl.split(storageIndicator)[1];
+    if (filePath) {
+      try {
+        const { error } = await supabaseClient.storage
+          .from('fashion-images')
+          .remove([filePath]);
+        if (error) throw error;
+        console.log("Successfully deleted file from storage:", filePath);
+      } catch (err) {
+        console.error("Failed to delete storage file:", err.message);
+      }
+    }
+  }
+}
+
 // --- MODAL UTILITIES & FORM SUBMIT HANDLERS ---
 function setupModalBindings() {
   // Bind toggles for admin dashboard Collections/Products view
@@ -833,6 +856,12 @@ async function handleCollectionSubmit(e) {
     }
     let result;
     if (id) {
+      // Find old collection image to clean up
+      const oldCol = collectionsState.find(c => c.id === id);
+      if (oldCol && oldCol.image !== image) {
+        await deleteImageFile(oldCol.image);
+      }
+
       // UPDATE
       result = await supabaseClient
         .from('collections')
@@ -860,6 +889,19 @@ window.deleteCollection = async function(id, title) {
   if (!confirmed) return;
 
   try {
+    // 1. Delete collection image file from storage
+    const col = collectionsState.find(c => c.id === id);
+    if (col) {
+      await deleteImageFile(col.image);
+    }
+
+    // 2. Delete all related products' images from storage
+    const relatedProducts = productsState.filter(p => p.collection_id === id);
+    for (const prod of relatedProducts) {
+      await deleteImageFile(prod.image);
+    }
+
+    // 3. Delete from database (Postgres cascade will delete records)
     const { error } = await supabaseClient
       .from('collections')
       .delete()
@@ -954,6 +996,12 @@ async function handleProductSubmit(e) {
     }
     let result;
     if (id) {
+      // Find old product image to clean up
+      const oldProd = productsState.find(p => p.id === id);
+      if (oldProd && oldProd.image !== image) {
+        await deleteImageFile(oldProd.image);
+      }
+
       // UPDATE
       result = await supabaseClient
         .from('products')
@@ -981,6 +1029,13 @@ window.deleteProduct = async function(id, name) {
   if (!confirmed) return;
 
   try {
+    // 1. Delete image file from storage
+    const prod = productsState.find(p => p.id === id);
+    if (prod) {
+      await deleteImageFile(prod.image);
+    }
+
+    // 2. Delete database record
     const { error } = await supabaseClient
       .from('products')
       .delete()
