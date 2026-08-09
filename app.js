@@ -371,7 +371,8 @@ function handleRoute() {
   } 
   else if (pathParts[0] === '#category' && pathParts[1]) {
     currentRoute = 'category';
-    activeCategoryFilter = pathParts[1];
+    // Decode Thai characters that get URL-encoded in the hash
+    activeCategoryFilter = decodeURIComponent(pathParts[1]);
     document.getElementById('route-category-detail').classList.add('active');
     renderCategoryDetail();
   }
@@ -456,14 +457,14 @@ function createCollectionCard(col, isSearchMode = false) {
   const div = document.createElement('div');
   div.className = 'border border-white/5 aspect-[3/4] relative overflow-hidden flex flex-col justify-end p-8 bg-zinc-950 group hover-zoom animate-fade-in-up';
   
-  // Background Image
+  // Background Image - full brightness, show true colors
   const imgDiv = document.createElement('div');
-  imgDiv.className = 'absolute inset-0 bg-cover bg-center opacity-75 group-hover:opacity-85 transition-opacity duration-500';
+  imgDiv.className = 'absolute inset-0 bg-cover bg-center opacity-100 transition-opacity duration-500';
   imgDiv.style.backgroundImage = `url('${col.image}')`;
   
-  // Overlay - lighter gradient so text stays readable but image shows true color
+  // Overlay - ONLY dark at the very bottom (bottom 50%) where text sits, transparent above
   const overlay = document.createElement('div');
-  overlay.className = 'absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent z-10';
+  overlay.className = 'absolute inset-0 bg-gradient-to-t from-black via-black/60 via-30% to-transparent to-60% z-10';
 
   // Details
   const content = document.createElement('div');
