@@ -458,12 +458,12 @@ function createCollectionCard(col, isSearchMode = false) {
   
   // Background Image
   const imgDiv = document.createElement('div');
-  imgDiv.className = 'absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-50 transition-opacity duration-500';
+  imgDiv.className = 'absolute inset-0 bg-cover bg-center opacity-75 group-hover:opacity-85 transition-opacity duration-500';
   imgDiv.style.backgroundImage = `url('${col.image}')`;
   
-  // Overlay
+  // Overlay - lighter gradient so text stays readable but image shows true color
   const overlay = document.createElement('div');
-  overlay.className = 'absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-10';
+  overlay.className = 'absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent z-10';
 
   // Details
   const content = document.createElement('div');
