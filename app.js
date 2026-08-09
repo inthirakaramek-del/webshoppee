@@ -953,6 +953,10 @@ window.openCollectionModal = function(id = null) {
     imageInput.value = col.image;
     showcaseInput.value = col.showcase_image || '';
     descInput.value = col.description || '';
+
+    // Show delete button in edit mode
+    const deleteBtn = document.getElementById('collection-delete-btn');
+    if (deleteBtn) deleteBtn.classList.remove('hidden');
   } else {
     // CREATE MODE
     header.textContent = "Create Collection";
@@ -961,6 +965,10 @@ window.openCollectionModal = function(id = null) {
     imageInput.value = '';
     showcaseInput.value = '';
     descInput.value = '';
+
+    // Hide delete button in create mode
+    const deleteBtn = document.getElementById('collection-delete-btn');
+    if (deleteBtn) deleteBtn.classList.add('hidden');
   }
 
   // Clear file inputs
@@ -970,6 +978,19 @@ window.openCollectionModal = function(id = null) {
   if (showcaseFileInput) showcaseFileInput.value = '';
 
   openModal('collection-modal');
+};
+
+// Handle delete collection from modal
+window.handleCollectionDelete = async function() {
+  const id = document.getElementById('collection-edit-id').value;
+  const title = document.getElementById('collection-title-input').value || 'this collection';
+  if (!id) return;
+
+  const confirmed = confirm(`ต้องการลบคอลเลคชั่น "${title}" ใช่ไหมคะ?\n\nการลบจะลบสินค้าทั้งหมดในคอลเลคชั่นนี้ด้วย และไม่สามารถกู้คืนได้`);
+  if (!confirmed) return;
+
+  closeModal();
+  await window.deleteCollection(id, title);
 };
 
 async function handleCollectionSubmit(e) {
@@ -1110,6 +1131,10 @@ window.openProductModal = function(id = null) {
     priceInput.value = prod.price;
     imageInput.value = prod.image;
     linkInput.value = prod.affiliate_link;
+
+    // Show delete button in edit mode
+    const deleteBtn = document.getElementById('product-delete-btn');
+    if (deleteBtn) deleteBtn.classList.remove('hidden');
   } else {
     // CREATE MODE
     header.textContent = "Create Product";
@@ -1121,6 +1146,10 @@ window.openProductModal = function(id = null) {
     priceInput.value = '';
     imageInput.value = '';
     linkInput.value = '';
+
+    // Hide delete button in create mode
+    const deleteBtn = document.getElementById('product-delete-btn');
+    if (deleteBtn) deleteBtn.classList.add('hidden');
   }
 
   // Clear file input
@@ -1128,6 +1157,33 @@ window.openProductModal = function(id = null) {
   if (fileInput) fileInput.value = '';
 
   openModal('product-modal');
+};
+
+// Handle delete product from modal
+window.handleProductDelete = async function() {
+  const id = document.getElementById('product-edit-id').value;
+  const name = document.getElementById('product-name-input').value || 'this product';
+  if (!id) return;
+
+  const confirmed = confirm(`ต้องการลบสินค้า "${name}" ใช่ไหมคะ?\n\nไม่สามารถกู้คืนได้`);
+  if (!confirmed) return;
+
+  try {
+    closeModal();
+    const prod = productsState.find(p => p.id === id);
+    if (prod) await deleteImageFile(prod.image);
+
+    const { error } = await supabaseClient
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    showSyncIndicator();
+    fetchProducts();
+  } catch (err) {
+    alert('Error deleting product: ' + err.message);
+  }
 };
 
 async function handleProductSubmit(e) {
