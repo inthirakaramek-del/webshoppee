@@ -119,3 +119,36 @@ CREATE POLICY "Allow public read access on fashion-images"
 ON storage.objects FOR SELECT
 TO public
 USING (bucket_id = 'fashion-images');
+
+-- Create Settings Table for Brand Config
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+-- Seed Initial Vandalyn Brand Config
+INSERT INTO settings (key, value) VALUES
+('tiktok_link', 'https://www.tiktok.com/'),
+('lemon8_link', 'https://www.lemon8-app.com/'),
+('hero_title', 'AUTUMN CAPSULE'),
+('hero_subtitle', 'A celebration of soft tailoring, lightweight organic textiles, and raw neutral aesthetics.'),
+('hero_image', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+
+-- Enable Row-Level Security (RLS)
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
+-- Create policy to allow everyone to view settings
+CREATE POLICY "Allow public read on settings" 
+ON settings FOR SELECT 
+USING (true);
+
+-- Create policy to allow everyone to modify settings (for simplicity in our admin portal)
+CREATE POLICY "Allow all actions on settings for everyone" 
+ON settings FOR ALL 
+USING (true)
+WITH CHECK (true);
+
+-- Enable Realtime for settings table
+ALTER PUBLICATION supabase_realtime ADD TABLE settings;
+

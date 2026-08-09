@@ -35,6 +35,7 @@ let currentRoute = 'home';
 let activeCollectionId = null;
 let activeCategoryFilter = 'All';
 let searchQuery = '';
+let settingsState = {};
 
 // --- EVENT LISTENERS (ON INITIAL LOAD) ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -150,11 +151,59 @@ async function fetchInitialData() {
   await Promise.all([
     fetchCollections(),
     fetchProducts(),
+    fetchSettings(),
     trackAndFetchPageViews()
   ]);
   
   // Re-render current page once initial data arrives
   handleRoute();
+}
+
+async function fetchSettings() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('settings')
+      .select('*');
+    if (error) throw error;
+    
+    settingsState = {};
+    data.forEach(item => {
+      settingsState[item.key] = item.value;
+    });
+    
+    renderSettings();
+  } catch (err) {
+    console.error("Error fetching settings:", err.message);
+  }
+}
+
+function renderSettings() {
+  const heroTitle = document.getElementById('hero-banner-title');
+  const heroSubtitle = document.getElementById('hero-banner-subtitle');
+  const heroImage = document.getElementById('hero-banner-image');
+  const tiktokLink = document.getElementById('hero-tiktok-link');
+  const lemon8Link = document.getElementById('hero-lemon8-link');
+
+  if (heroTitle && settingsState['hero_title']) heroTitle.textContent = settingsState['hero_title'];
+  if (heroSubtitle && settingsState['hero_subtitle']) heroSubtitle.textContent = settingsState['hero_subtitle'];
+  if (heroImage && settingsState['hero_image']) {
+    heroImage.style.backgroundImage = `url('${settingsState['hero_image']}')`;
+  }
+  if (tiktokLink && settingsState['tiktok_link']) tiktokLink.href = settingsState['tiktok_link'];
+  if (lemon8Link && settingsState['lemon8_link']) lemon8Link.href = settingsState['lemon8_link'];
+
+  // Fill admin inputs if logged in
+  const inputTitle = document.getElementById('setting-hero-title');
+  const inputSubtitle = document.getElementById('setting-hero-subtitle');
+  const inputImage = document.getElementById('setting-hero-image');
+  const inputTiktok = document.getElementById('setting-tiktok-link');
+  const inputLemon8 = document.getElementById('setting-lemon8-link');
+
+  if (inputTitle) inputTitle.value = settingsState['hero_title'] || '';
+  if (inputSubtitle) inputSubtitle.value = settingsState['hero_subtitle'] || '';
+  if (inputImage) inputImage.value = settingsState['hero_image'] || '';
+  if (inputTiktok) inputTiktok.value = settingsState['tiktok_link'] || '';
+  if (inputLemon8) inputLemon8.value = settingsState['lemon8_link'] || '';
 }
 
 async function fetchCollections() {
@@ -256,6 +305,7 @@ function setupRealtimeSubscriptions() {
       // Update screen viewing product lists
       if (currentRoute === 'home') renderHome();
       if (currentRoute === 'collection') renderCollectionDetail();
+      if (currentRoute === 'category') renderCategoryDetail();
       if (currentRoute === 'admin') renderAdminPanel();
     })
     .subscribe();
@@ -268,6 +318,15 @@ function setupRealtimeSubscriptions() {
         pageVisitsState = payload.new.count;
         updateStatsUI();
       }
+    })
+    .subscribe();
+
+  // Subscribe to settings schema changes
+  supabaseClient.channel('public:settings')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, async (payload) => {
+      console.log('Realtime Settings change:', payload);
+      showSyncIndicator();
+      await fetchSettings();
     })
     .subscribe();
 }
@@ -292,6 +351,12 @@ function handleRoute() {
     document.getElementById('route-collection-detail').classList.add('active');
     renderCollectionDetail();
   } 
+  else if (pathParts[0] === '#category' && pathParts[1]) {
+    currentRoute = 'category';
+    activeCategoryFilter = pathParts[1];
+    document.getElementById('route-category-detail').classList.add('active');
+    renderCategoryDetail();
+  }
   else if (hash === '#admin') {
     currentRoute = 'admin';
     document.getElementById('route-admin').classList.add('active');
@@ -371,7 +436,7 @@ function renderHome() {
 
 function createCollectionCard(col, isSearchMode = false) {
   const div = document.createElement('div');
-  div.className = 'border border-white/5 h-[450px] relative overflow-hidden flex flex-col justify-end p-8 bg-zinc-950 group hover-zoom animate-fade-in-up';
+  div.className = 'border border-white/5 aspect-[3/4] relative overflow-hidden flex flex-col justify-end p-8 bg-zinc-950 group hover-zoom animate-fade-in-up';
   
   // Background Image
   const imgDiv = document.createElement('div');
@@ -435,37 +500,15 @@ function renderCollectionDetail() {
     <p class="text-zinc-400 text-xs md:text-sm max-w-3xl leading-relaxed font-light mt-4 uppercase tracking-wider">${collection.description || 'Minimalist silhouette capsule'}</p>
   `;
 
-  // Bind Category Filter tabs click event
-  const tabs = document.querySelectorAll('.category-tab');
-  tabs.forEach(tab => {
-    // Mark active tab
-    const cat = tab.getAttribute('data-category');
-    if (cat === activeCategoryFilter) {
-      tab.className = "category-tab border-b-2 border-white text-white pb-3 text-xs uppercase tracking-widest font-semibold focus:outline-none transition-all";
-    } else {
-      tab.className = "category-tab border-b-2 border-transparent text-zinc-500 hover:text-zinc-300 pb-3 text-xs uppercase tracking-widest focus:outline-none transition-all";
-    }
-
-    // click handler
-    tab.onclick = () => {
-      activeCategoryFilter = cat;
-      renderCollectionDetail();
-    };
-  });
-
-  // Render Products matching collection & category filters
+  // Render Products matching collection
   grid.innerHTML = '';
   
-  let filteredProducts = productsState.filter(p => p.collection_id === activeCollectionId);
+  const filteredProducts = productsState.filter(p => p.collection_id === activeCollectionId);
   
-  if (activeCategoryFilter !== 'All') {
-    filteredProducts = filteredProducts.filter(p => p.category === activeCategoryFilter);
-  }
-
   if (filteredProducts.length === 0) {
     grid.innerHTML = `
       <div class="col-span-full py-16 text-center text-zinc-500 tracking-wider text-xs">
-        NO PIECES UNDER THIS CATEGORY IN THE ${collection.title} YET.
+        NO PIECES IN THE ${collection.title} YET.
       </div>
     `;
     return;
@@ -473,6 +516,35 @@ function renderCollectionDetail() {
 
   filteredProducts.forEach(prod => {
     grid.appendChild(createProductCard(prod, false));
+  });
+}
+
+// --- VISITOR VIEW: RENDERING PRODUCT LIST WITHIN CATEGORY ---
+function renderCategoryDetail() {
+  const title = document.getElementById('category-detail-title');
+  const grid = document.getElementById('category-products-grid');
+
+  if (!title || !grid) return;
+
+  // Set category title (e.g. TOPS)
+  title.textContent = activeCategoryFilter.toUpperCase();
+
+  grid.innerHTML = '';
+
+  // Filter products by category across all collections
+  const filteredProducts = productsState.filter(p => p.category === activeCategoryFilter);
+
+  if (filteredProducts.length === 0) {
+    grid.innerHTML = `
+      <div class="col-span-full py-16 text-center text-zinc-500 tracking-wider text-sm">
+        NO PIECES UNDER THE ${activeCategoryFilter.toUpperCase()} CATEGORY YET.
+      </div>
+    `;
+    return;
+  }
+
+  filteredProducts.forEach(prod => {
+    grid.appendChild(createProductCard(prod, true)); // pass true to display the collection name badge
   });
 }
 
@@ -486,7 +558,7 @@ function createProductCard(prod, isSearchMode = false) {
 
   div.innerHTML = `
     <!-- Product Image Box -->
-    <div class="aspect-[3/4] relative overflow-hidden bg-zinc-900 border-b border-white/5 hover-zoom">
+    <div class="aspect-square relative overflow-hidden bg-zinc-900 border-b border-white/5 hover-zoom">
       <img src="${prod.image}" alt="${prod.name}" class="w-full h-full object-cover">
       ${isSearchMode && col ? `
         <span class="absolute top-4 left-4 z-10 bg-black/75 border border-white/10 px-2 py-0.5 text-[9px] uppercase tracking-widest text-zinc-400">
@@ -742,25 +814,30 @@ async function deleteImageFile(imageUrl) {
 
 // --- MODAL UTILITIES & FORM SUBMIT HANDLERS ---
 function setupModalBindings() {
-  // Bind toggles for admin dashboard Collections/Products view
+  // Bind toggles for admin dashboard Collections/Products/Settings view
   const toggleCollectionsBtn = document.getElementById('admin-toggle-collections');
   const toggleProductsBtn = document.getElementById('admin-toggle-products');
+  const toggleSettingsBtn = document.getElementById('admin-toggle-settings');
   const collectionsSection = document.getElementById('admin-collections-sec');
   const productsSection = document.getElementById('admin-products-sec');
+  const settingsSection = document.getElementById('admin-settings-sec');
 
-  toggleCollectionsBtn.addEventListener('click', () => {
-    toggleCollectionsBtn.className = "bg-white text-black text-xs font-semibold px-6 py-2 uppercase tracking-widest transition-all";
-    toggleProductsBtn.className = "text-zinc-500 hover:text-zinc-300 text-xs px-6 py-2 uppercase tracking-widest transition-all";
-    collectionsSection.classList.remove('hidden');
-    productsSection.classList.add('hidden');
-  });
+  const selectTab = (activeTab) => {
+    const activeClass = "bg-white text-black text-xs font-semibold px-6 py-2 uppercase tracking-widest transition-all";
+    const inactiveClass = "text-zinc-500 hover:text-zinc-300 text-xs px-6 py-2 uppercase tracking-widest transition-all";
 
-  toggleProductsBtn.addEventListener('click', () => {
-    toggleProductsBtn.className = "bg-white text-black text-xs font-semibold px-6 py-2 uppercase tracking-widest transition-all";
-    toggleCollectionsBtn.className = "text-zinc-500 hover:text-zinc-300 text-xs px-6 py-2 uppercase tracking-widest transition-all";
-    productsSection.classList.remove('hidden');
-    collectionsSection.classList.add('hidden');
-  });
+    toggleCollectionsBtn.className = activeTab === 'collections' ? activeClass : inactiveClass;
+    toggleProductsBtn.className = activeTab === 'products' ? activeClass : inactiveClass;
+    toggleSettingsBtn.className = activeTab === 'settings' ? activeClass : inactiveClass;
+
+    collectionsSection.classList.toggle('hidden', activeTab !== 'collections');
+    productsSection.classList.toggle('hidden', activeTab !== 'products');
+    settingsSection.classList.toggle('hidden', activeTab !== 'settings');
+  };
+
+  toggleCollectionsBtn.addEventListener('click', () => selectTab('collections'));
+  toggleProductsBtn.addEventListener('click', () => selectTab('products'));
+  toggleSettingsBtn.addEventListener('click', () => selectTab('settings'));
 
   // Bind close buttons for modals
   document.querySelectorAll('.modal-close-btn').forEach(btn => {
@@ -777,6 +854,7 @@ function setupModalBindings() {
   // Form submits
   document.getElementById('collection-form').addEventListener('submit', handleCollectionSubmit);
   document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
+  document.getElementById('brand-settings-form').addEventListener('submit', handleSettingsSubmit);
 }
 
 function openModal(modalId) {
@@ -1047,3 +1125,43 @@ window.deleteProduct = async function(id, name) {
     alert("Error deleting product: " + error.message);
   }
 };
+
+async function handleSettingsSubmit(e) {
+  e.preventDefault();
+  const hero_title = document.getElementById('setting-hero-title').value.trim();
+  const hero_subtitle = document.getElementById('setting-hero-subtitle').value.trim();
+  const hero_image = document.getElementById('setting-hero-image').value.trim();
+  const tiktok_link = document.getElementById('setting-tiktok-link').value.trim();
+  const lemon8_link = document.getElementById('setting-lemon8-link').value.trim();
+
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = "Saving Settings...";
+  submitBtn.disabled = true;
+
+  try {
+    const updates = [
+      { key: 'hero_title', value: hero_title },
+      { key: 'hero_subtitle', value: hero_subtitle },
+      { key: 'hero_image', value: hero_image },
+      { key: 'tiktok_link', value: tiktok_link },
+      { key: 'lemon8_link', value: lemon8_link }
+    ];
+
+    // Update settings in database
+    for (const update of updates) {
+      const { error } = await supabaseClient
+        .from('settings')
+        .upsert([update], { onConflict: 'key' });
+      if (error) throw error;
+    }
+
+    alert("Settings saved successfully!");
+    fetchSettings();
+  } catch (err) {
+    alert("Error saving settings: " + err.message);
+  } finally {
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+  }
+}
