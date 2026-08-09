@@ -150,23 +150,18 @@ function updateAdminUIState() {
   const navAdmin = document.getElementById('nav-admin');
   const navSeparator = document.getElementById('nav-admin-separator');
   const previewToggleBtn = document.getElementById('preview-toggle-btn');
-  const homeAddBtn = document.getElementById('home-add-collection-btn');
   
   if (adminLoggedIn) {
     badge.classList.remove('hidden');
     navAdmin.classList.remove('hidden');
     if (navSeparator) navSeparator.classList.remove('hidden');
     if (previewToggleBtn) previewToggleBtn.classList.remove('hidden');
-    if (homeAddBtn) homeAddBtn.classList.remove('hidden');
-    if (homeAddBtn) homeAddBtn.classList.add('inline-flex');
     navAdmin.textContent = "Workspace";
   } else {
     badge.classList.add('hidden');
     navAdmin.classList.add('hidden');
     if (navSeparator) navSeparator.classList.add('hidden');
     if (previewToggleBtn) previewToggleBtn.classList.add('hidden');
-    if (homeAddBtn) homeAddBtn.classList.add('hidden');
-    if (homeAddBtn) homeAddBtn.classList.remove('inline-flex');
     navAdmin.textContent = "Admin Dashboard";
   }
 }
@@ -523,15 +518,48 @@ function renderCollectionDetail() {
     <p class="text-zinc-400 text-xs md:text-sm max-w-3xl leading-relaxed font-light mt-4 uppercase tracking-wider">${collection.description || 'Minimalist silhouette capsule'}</p>
   `;
 
-  // Render Showcase Image if available
-  const showcaseContainer = document.getElementById('collection-showcase-container');
+  // Render Showcase Image: show image if available, show admin placeholder if admin & no image
+  const showcaseImgDiv = document.getElementById('collection-showcase-img');
   const showcaseSrc = document.getElementById('collection-showcase-src');
-  if (showcaseContainer && showcaseSrc) {
-    if (collection.showcase_image) {
-      showcaseSrc.src = collection.showcase_image;
-      showcaseContainer.classList.remove('hidden');
+  const showcasePlaceholder = document.getElementById('collection-showcase-placeholder');
+  const showcaseContainer = document.getElementById('collection-showcase-container');
+
+  if (collection.showcase_image) {
+    // Has image — show it
+    if (showcaseSrc) showcaseSrc.src = collection.showcase_image;
+    if (showcaseImgDiv) showcaseImgDiv.classList.remove('hidden');
+    if (showcasePlaceholder) showcasePlaceholder.classList.add('hidden');
+    if (showcaseContainer) showcaseContainer.classList.remove('hidden');
+  } else if (adminLoggedIn && !previewMode) {
+    // No image, but admin — show placeholder with instruction
+    if (showcaseImgDiv) showcaseImgDiv.classList.add('hidden');
+    if (showcasePlaceholder) {
+      showcasePlaceholder.classList.remove('hidden');
+      showcasePlaceholder.onclick = () => openCollectionModal(collection.id);
+    }
+    if (showcaseContainer) showcaseContainer.classList.remove('hidden');
+  } else {
+    // No image, visitor — hide entire block
+    if (showcaseContainer) showcaseContainer.classList.add('hidden');
+  }
+
+  // Show/hide Admin Action Bar (Add Product button)
+  const adminBar = document.getElementById('collection-admin-bar');
+  const addProductBtn = document.getElementById('collection-add-product-btn');
+  if (adminBar && addProductBtn) {
+    if (adminLoggedIn && !previewMode) {
+      adminBar.classList.remove('hidden');
+      // Pre-select this collection when opening product modal
+      addProductBtn.onclick = () => {
+        openProductModal(); // open blank modal
+        // After modal opens, set the collection selector to current collection
+        setTimeout(() => {
+          const sel = document.getElementById('product-collection-select');
+          if (sel) sel.value = activeCollectionId;
+        }, 50);
+      };
     } else {
-      showcaseContainer.classList.add('hidden');
+      adminBar.classList.add('hidden');
     }
   }
 
