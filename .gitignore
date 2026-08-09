@@ -1,0 +1,6 @@
+# Ignore private credentials
+config.js
+
+# System files
+.DS_Store
+Thumbs.db
