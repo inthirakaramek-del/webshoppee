@@ -36,6 +36,7 @@ let activeCollectionId = null;
 let activeCategoryFilter = 'All';
 let searchQuery = '';
 let settingsState = {};
+let previewMode = false;
 
 // --- EVENT LISTENERS (ON INITIAL LOAD) ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -50,6 +51,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Setup Real-time Listeners
   setupRealtimeSubscriptions();
+
+  // Bind Preview Toggle Button
+  const previewToggleBtn = document.getElementById('preview-toggle-btn');
+  if (previewToggleBtn) {
+    previewToggleBtn.addEventListener('click', () => {
+      previewMode = !previewMode;
+      previewToggleBtn.textContent = previewMode ? "Admin View" : "Preview Site";
+      previewToggleBtn.className = previewMode 
+        ? "bg-white text-black px-2 py-0.5 text-[9px] uppercase tracking-widest font-semibold rounded-sm border border-white" 
+        : "border border-white/20 hover:border-white px-2 py-0.5 text-[9px] uppercase tracking-widest text-zinc-400 hover:text-white transition-all rounded-none bg-transparent";
+      
+      // Re-render current route to hide/show edit buttons
+      if (currentRoute === 'home') renderHome();
+      if (currentRoute === 'collection') renderCollectionDetail();
+      if (currentRoute === 'category') renderCategoryDetail();
+    });
+  }
 
   // Bind Search Input
   const searchInput = document.getElementById('search-input');
@@ -131,15 +149,19 @@ function updateAdminUIState() {
   const badge = document.getElementById('admin-indicator');
   const navAdmin = document.getElementById('nav-admin');
   const navSeparator = document.getElementById('nav-admin-separator');
+  const previewToggleBtn = document.getElementById('preview-toggle-btn');
+  
   if (adminLoggedIn) {
     badge.classList.remove('hidden');
     navAdmin.classList.remove('hidden');
     if (navSeparator) navSeparator.classList.remove('hidden');
+    if (previewToggleBtn) previewToggleBtn.classList.remove('hidden');
     navAdmin.textContent = "Workspace";
   } else {
     badge.classList.add('hidden');
     navAdmin.classList.add('hidden');
     if (navSeparator) navSeparator.classList.add('hidden');
+    if (previewToggleBtn) previewToggleBtn.classList.add('hidden');
     navAdmin.textContent = "Admin Dashboard";
   }
 }
@@ -151,8 +173,7 @@ async function fetchInitialData() {
   await Promise.all([
     fetchCollections(),
     fetchProducts(),
-    fetchSettings(),
-    trackAndFetchPageViews()
+    fetchSettings()
   ]);
   
   // Re-render current page once initial data arrives
@@ -270,9 +291,6 @@ async function trackAndFetchPageViews() {
 }
 
 function updateStatsUI() {
-  const statViews = document.getElementById('stat-visit-count');
-  if (statViews) statViews.textContent = pageVisitsState;
-
   const statCollections = document.getElementById('stat-collections-count');
   if (statCollections) statCollections.textContent = collectionsState.length;
 
@@ -460,7 +478,7 @@ function createCollectionCard(col, isSearchMode = false) {
         Explore Collection
         <svg class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
       </a>
-      ${adminLoggedIn ? `
+      ${(adminLoggedIn && !previewMode) ? `
         <button onclick="event.preventDefault(); openCollectionModal('${col.id}')" class="text-zinc-400 hover:text-white text-[10px] uppercase tracking-widest border border-white/10 hover:border-white/30 px-3 py-1 rounded bg-black/40">
           Edit
         </button>
@@ -491,7 +509,7 @@ function renderCollectionDetail() {
   header.innerHTML = `
     <div class="flex items-center justify-between">
       <h2 class="text-4xl lg:text-5xl font-light tracking-widest text-white uppercase">${collection.title}</h2>
-      ${adminLoggedIn ? `
+      ${(adminLoggedIn && !previewMode) ? `
         <button onclick="openCollectionModal('${collection.id}')" class="border border-white/20 hover:border-white text-white text-[10px] uppercase tracking-widest py-2 px-5 transition-colors">
           Manage Collection
         </button>
@@ -586,7 +604,7 @@ function createProductCard(prod, isSearchMode = false) {
         >
           Order Piece
         </a>
-        ${adminLoggedIn ? `
+        ${(adminLoggedIn && !previewMode) ? `
           <button onclick="openProductModal('${prod.id}')" class="bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-400 hover:text-white px-3.5 py-2.5 text-[10px] uppercase tracking-wider rounded-none">
             Edit
           </button>

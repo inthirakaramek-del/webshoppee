@@ -32,8 +32,8 @@
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Config and Application Logic -->
-  <script src="config.js?v=8"></script>
-  <script src="app.js?v=8" defer></script>
+  <script src="config.js?v=9"></script>
+  <script src="app.js?v=9" defer></script>
 </head>
 <body class="bg-brand-black text-brand-light min-h-screen flex flex-col antialiased">
 
@@ -76,17 +76,22 @@
       </div>
 
       <!-- Nav Links -->
-      <nav class="flex items-center gap-5 lg:gap-6 text-[10px] uppercase tracking-[0.15em]">
+      <nav class="flex flex-wrap items-center gap-x-4 lg:gap-x-5 gap-y-2 text-[10px] uppercase tracking-[0.15em]">
         <a href="#home" class="hover-underline text-white/70 hover:text-white transition-colors">Collections</a>
         <span class="text-white/10">|</span>
-        <a href="#category/Tops" class="hover-underline text-white/70 hover:text-white transition-colors">Tops</a>
-        <a href="#category/Bottoms" class="hover-underline text-white/70 hover:text-white transition-colors">Bottoms</a>
-        <a href="#category/Accessories" class="hover-underline text-white/70 hover:text-white transition-colors">Accessories</a>
-        <a href="#category/Others" class="hover-underline text-white/70 hover:text-white transition-colors">Others</a>
+        <a href="#category/เสื้อ" class="hover-underline text-white/70 hover:text-white transition-colors">เสื้อ</a>
+        <a href="#category/กางเกง" class="hover-underline text-white/70 hover:text-white transition-colors">กางเกง</a>
+        <a href="#category/กระโปรง" class="hover-underline text-white/70 hover:text-white transition-colors">กระโปรง</a>
+        <a href="#category/รองเท้า" class="hover-underline text-white/70 hover:text-white transition-colors">รองเท้า</a>
+        <a href="#category/เครื่องประดับ" class="hover-underline text-white/70 hover:text-white transition-colors">เครื่องประดับ</a>
+        <a href="#category/กระเป๋า" class="hover-underline text-white/70 hover:text-white transition-colors">กระเป๋า</a>
+        <a href="#category/แว่นตา" class="hover-underline text-white/70 hover:text-white transition-colors">แว่นตา</a>
         <span id="nav-admin-separator" class="hidden text-white/10">|</span>
         <a href="#admin" id="nav-admin" class="hidden hover-underline text-white/70 hover:text-white transition-colors">Workspace</a>
         <!-- Logged In Admin Indicator -->
         <span id="admin-indicator" class="hidden bg-white text-black px-2 py-0.5 font-semibold text-[9px] tracking-widest rounded-sm">ADMIN</span>
+        <!-- Preview Toggle Button -->
+        <button id="preview-toggle-btn" class="hidden border border-white/20 hover:border-white px-2 py-0.5 text-[9px] uppercase tracking-widest text-zinc-400 hover:text-white transition-all rounded-none bg-transparent">Preview Site</button>
       </nav>
     </div>
   </header>
@@ -103,15 +108,11 @@
         <div class="absolute inset-0 z-0 bg-cover bg-center opacity-30 hover-zoom" style="background-image: url('https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop');" id="hero-banner-image"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10"></div>
         <div class="relative z-20 text-center px-4 max-w-2xl flex flex-col items-center">
-          <h2 class="text-3xl md:text-5xl font-light tracking-[0.2em] mb-4 text-white uppercase" id="hero-banner-title">Autumn Capsule</h2>
+          <h2 class="text-3xl md:text-5xl font-light tracking-[0.2em] mb-4 text-white uppercase" id="hero-banner-title">Welcome to Our Wardrobe</h2>
           <p class="text-zinc-400 text-xs md:text-sm tracking-wide leading-relaxed font-light mb-6" id="hero-banner-subtitle">
-            A celebration of soft tailoring, lightweight organic textiles, and raw neutral aesthetics tailored for contemporary transitions.
+            Hi! ยินดีต้อนรับค่ะซิส อยากได้ลุคไหน วันนี้เราคัดพิกัดชุดสวยราคาดีมาให้แล้ว เลือกช้อปกันได้เลยจ้า
           </p>
           <div class="flex flex-col sm:flex-row items-center gap-5">
-            <a href="#home" id="hero-cta" class="border border-white text-white hover:bg-white hover:text-black transition-all text-xs uppercase tracking-widest py-3 px-8 text-center rounded-none font-medium">
-              Explore Capsule
-            </a>
-            
             <!-- Brand Social Follow Links -->
             <div class="flex items-center gap-4">
               <!-- TikTok Icon Button -->
@@ -120,7 +121,7 @@
                   <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.94-1.72-.49-.44-.9-.97-1.24-1.55v7.27c.05 4.13-2.87 7.82-6.93 8.6-4.32.96-8.8-1.72-9.97-5.9a9.02 9.02 0 0 1 5.9-10.97c1.17-.32 2.38-.41 3.59-.28v4.13c-.95-.24-1.99-.18-2.9.22a4.905 4.905 0 0 0-3.07 5.17c.32 2.4 2.47 4.21 4.9 4.02 2.37-.08 4.38-1.9 4.54-4.27.03-.42.02-.85.02-1.27V.02z"/>
                 </svg>
               </a>
-              <!-- Lemon8 Icon Button (Lemon + Leaf shape) -->
+              <!-- Lemon8 Icon Button -->
               <a href="https://www.lemon8-app.com/" id="hero-lemon8-link" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-white transition-colors" title="Lemon8">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 3a9 9 0 0 0-9 9c0 4.97 4.03 9 9 9s9-4.03 9-9-4.03-9-9-9z" />
@@ -255,7 +256,7 @@
         </div>
 
         <!-- Statistics Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div class="border border-white/5 bg-zinc-950/40 p-6 flex flex-col gap-2">
             <span class="text-[10px] uppercase tracking-widest text-zinc-500">Total Collections</span>
             <span id="stat-collections-count" class="text-3xl font-light text-white font-mono">0</span>
@@ -263,12 +264,6 @@
           <div class="border border-white/5 bg-zinc-950/40 p-6 flex flex-col gap-2">
             <span class="text-[10px] uppercase tracking-widest text-zinc-500">Active Products</span>
             <span id="stat-products-count" class="text-3xl font-light text-white font-mono">0</span>
-          </div>
-          <div class="border border-white/5 bg-zinc-950/40 p-6 flex flex-col gap-2 relative overflow-hidden">
-            <span class="text-[10px] uppercase tracking-widest text-zinc-500">Other Visitor Page Views</span>
-            <span id="stat-visit-count" class="text-3xl font-light text-white font-mono">0</span>
-            <!-- Live pulse indicator -->
-            <span class="absolute top-6 right-6 w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
           </div>
         </div>
 
@@ -482,10 +477,13 @@
           <div class="flex flex-col gap-1.5">
             <label class="text-[10px] uppercase tracking-wider text-zinc-400">Category *</label>
             <select id="product-category-select" class="bg-black border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" required>
-              <option value="Tops">Tops</option>
-              <option value="Bottoms">Bottoms</option>
-              <option value="Accessories">Accessories</option>
-              <option value="Others">Others</option>
+              <option value="เสื้อ">เสื้อ</option>
+              <option value="กางเกง">กางเกง</option>
+              <option value="กระโปรง">กระโปรง</option>
+              <option value="รองเท้า">รองเท้า</option>
+              <option value="เครื่องประดับ">เครื่องประดับ</option>
+              <option value="กระเป๋า">กระเป๋า</option>
+              <option value="แว่นตา">แว่นตา</option>
             </select>
           </div>
         </div>
