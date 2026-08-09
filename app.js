@@ -150,18 +150,23 @@ function updateAdminUIState() {
   const navAdmin = document.getElementById('nav-admin');
   const navSeparator = document.getElementById('nav-admin-separator');
   const previewToggleBtn = document.getElementById('preview-toggle-btn');
+  const homeAddBtn = document.getElementById('home-add-collection-btn');
   
   if (adminLoggedIn) {
     badge.classList.remove('hidden');
     navAdmin.classList.remove('hidden');
     if (navSeparator) navSeparator.classList.remove('hidden');
     if (previewToggleBtn) previewToggleBtn.classList.remove('hidden');
+    if (homeAddBtn) homeAddBtn.classList.remove('hidden');
+    if (homeAddBtn) homeAddBtn.classList.add('inline-flex');
     navAdmin.textContent = "Workspace";
   } else {
     badge.classList.add('hidden');
     navAdmin.classList.add('hidden');
     if (navSeparator) navSeparator.classList.add('hidden');
     if (previewToggleBtn) previewToggleBtn.classList.add('hidden');
+    if (homeAddBtn) homeAddBtn.classList.add('hidden');
+    if (homeAddBtn) homeAddBtn.classList.remove('inline-flex');
     navAdmin.textContent = "Admin Dashboard";
   }
 }
@@ -517,6 +522,18 @@ function renderCollectionDetail() {
     </div>
     <p class="text-zinc-400 text-xs md:text-sm max-w-3xl leading-relaxed font-light mt-4 uppercase tracking-wider">${collection.description || 'Minimalist silhouette capsule'}</p>
   `;
+
+  // Render Showcase Image if available
+  const showcaseContainer = document.getElementById('collection-showcase-container');
+  const showcaseSrc = document.getElementById('collection-showcase-src');
+  if (showcaseContainer && showcaseSrc) {
+    if (collection.showcase_image) {
+      showcaseSrc.src = collection.showcase_image;
+      showcaseContainer.classList.remove('hidden');
+    } else {
+      showcaseContainer.classList.add('hidden');
+    }
+  }
 
   // Render Products matching collection
   grid.innerHTML = '';
@@ -892,6 +909,7 @@ function closeModal() {
 window.openCollectionModal = function(id = null) {
   const titleInput = document.getElementById('collection-title-input');
   const imageInput = document.getElementById('collection-image-input');
+  const showcaseInput = document.getElementById('collection-showcase-input');
   const descInput = document.getElementById('collection-desc-input');
   const editId = document.getElementById('collection-edit-id');
   const header = document.getElementById('collection-modal-title');
@@ -905,6 +923,7 @@ window.openCollectionModal = function(id = null) {
     editId.value = col.id;
     titleInput.value = col.title;
     imageInput.value = col.image;
+    showcaseInput.value = col.showcase_image || '';
     descInput.value = col.description || '';
   } else {
     // CREATE MODE
@@ -912,12 +931,15 @@ window.openCollectionModal = function(id = null) {
     editId.value = '';
     titleInput.value = '';
     imageInput.value = '';
+    showcaseInput.value = '';
     descInput.value = '';
   }
 
-  // Clear file input
+  // Clear file inputs
   const fileInput = document.getElementById('collection-image-file');
   if (fileInput) fileInput.value = '';
+  const showcaseFileInput = document.getElementById('collection-showcase-file');
+  if (showcaseFileInput) showcaseFileInput.value = '';
 
   openModal('collection-modal');
 };
@@ -931,8 +953,11 @@ async function handleCollectionSubmit(e) {
   const fileInput = document.getElementById('collection-image-file');
   let image = document.getElementById('collection-image-input').value.trim();
 
+  const showcaseFileInput = document.getElementById('collection-showcase-file');
+  let showcase_image = document.getElementById('collection-showcase-input').value.trim();
+
   try {
-    // If a file is chosen, upload it to Supabase Storage first
+    // If a thumbnail file is chosen, upload it
     if (fileInput && fileInput.files.length > 0) {
       const submitBtn = e.target.querySelector('button[type="submit"]');
       const originalText = submitBtn.textContent;
@@ -940,6 +965,20 @@ async function handleCollectionSubmit(e) {
       submitBtn.disabled = true;
       try {
         image = await uploadImageFile(fileInput.files[0]);
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+    }
+
+    // If a showcase file is chosen, upload it
+    if (showcaseFileInput && showcaseFileInput.files.length > 0) {
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Uploading Showcase...";
+      submitBtn.disabled = true;
+      try {
+        showcase_image = await uploadImageFile(showcaseFileInput.files[0]);
       } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
@@ -957,17 +996,21 @@ async function handleCollectionSubmit(e) {
       if (oldCol && oldCol.image !== image) {
         await deleteImageFile(oldCol.image);
       }
+      // Also clean up old showcase image if replaced
+      if (oldCol && oldCol.showcase_image && oldCol.showcase_image !== showcase_image) {
+        await deleteImageFile(oldCol.showcase_image);
+      }
 
       // UPDATE
       result = await supabaseClient
         .from('collections')
-        .update({ title, image, description })
+        .update({ title, image, showcase_image: showcase_image || null, description })
         .eq('id', id);
     } else {
       // INSERT
       result = await supabaseClient
         .from('collections')
-        .insert([{ title, image, description }]);
+        .insert([{ title, image, showcase_image: showcase_image || null, description }]);
     }
 
     if (result.error) throw result.error;
