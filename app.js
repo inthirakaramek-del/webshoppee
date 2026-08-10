@@ -492,7 +492,7 @@ function renderHome() {
 
 function createCollectionCard(col, isSearchMode = false) {
   const div = document.createElement('div');
-  div.className = 'border border-white/5 aspect-[3/4] relative overflow-hidden flex flex-col justify-end p-8 bg-zinc-950 group hover-zoom animate-fade-in-up';
+  div.className = 'border border-white/5 aspect-[3/4] relative overflow-hidden flex flex-col justify-end p-8 bg-zinc-950 group hover-zoom animate-fade-in-up cursor-pointer';
   
   // Background Image - full brightness, show true colors
   const imgDiv = document.createElement('div');
@@ -517,7 +517,7 @@ function createCollectionCard(col, isSearchMode = false) {
         <svg class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
       </a>
       ${(adminLoggedIn && !previewMode) ? `
-        <button onclick="event.preventDefault(); openCollectionModal('${col.id}')" class="text-zinc-400 hover:text-white text-[10px] uppercase tracking-widest border border-white/10 hover:border-white/30 px-3 py-1 rounded bg-black/40">
+        <button onclick="event.stopPropagation(); openCollectionModal('${col.id}')" class="text-zinc-400 hover:text-white text-[10px] uppercase tracking-widest border border-white/10 hover:border-white/30 px-3 py-1 rounded bg-black/40">
           Edit
         </button>
       ` : ''}
@@ -527,6 +527,12 @@ function createCollectionCard(col, isSearchMode = false) {
   div.appendChild(imgDiv);
   div.appendChild(overlay);
   div.appendChild(content);
+
+  div.onclick = (e) => {
+    if (!e.target.closest('button')) {
+      window.location.hash = `#collection/${col.id}`;
+    }
+  };
 
   return div;
 }
