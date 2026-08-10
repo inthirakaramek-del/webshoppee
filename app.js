@@ -98,16 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHome();
   });
 
-  // Bind Guide Modal Trigger Buttons
-  const openGuideBtn = document.getElementById('open-guide-btn');
-  if (openGuideBtn) {
-    openGuideBtn.addEventListener('click', () => openModal('guide-modal'));
-  }
-  const mobileGuideFab = document.getElementById('mobile-guide-fab');
-  if (mobileGuideFab) {
-    mobileGuideFab.addEventListener('click', () => openModal('guide-modal'));
-  }
-
   // Bind Admin Auth Form
   document.getElementById('admin-login-form').addEventListener('submit', handleAdminLogin);
   document.getElementById('admin-logout-btn').addEventListener('click', handleAdminLogout);
@@ -977,7 +967,7 @@ function openModal(modalId) {
 }
 
 function closeModal() {
-  document.querySelectorAll('#collection-modal, #product-modal, #guide-modal').forEach(modal => {
+  document.querySelectorAll('#collection-modal, #product-modal').forEach(modal => {
     modal.classList.remove('opacity-100', 'pointer-events-auto');
     modal.classList.add('opacity-0', 'pointer-events-none');
   });
