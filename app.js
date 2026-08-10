@@ -34,6 +34,7 @@ if (isConfigured) {
 let currentRoute = 'home';
 let activeCollectionId = null;
 let activeCategoryFilter = 'All';
+let activeToneFilter = 'All';
 let searchQuery = '';
 let settingsState = {};
 let previewMode = false;
@@ -95,29 +96,65 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHome();
   });
 
+  // Bind Guide Modal Trigger Button
+  const openGuideBtn = document.getElementById('open-guide-btn');
+  if (openGuideBtn) {
+    openGuideBtn.addEventListener('click', () => openModal('guide-modal'));
+  }
+
   // Bind Admin Auth Form
   document.getElementById('admin-login-form').addEventListener('submit', handleAdminLogin);
   document.getElementById('admin-logout-btn').addEventListener('click', handleAdminLogout);
 
-  // Hidden Trigger 1: Triple-clicking logo
-  let logoClicks = 0;
-  let logoClickTimeout;
-  const logo = document.querySelector('a.brand-logo');
-  if (logo) {
-    logo.addEventListener('click', (e) => {
-      if (adminLoggedIn) return; // Normal hash navigation to #home if already admin
+  // Hidden Trigger: Secret Letter Sequence -> V (3 times), D (2 times), L (2 times), Y (4 times)
+  let secretStage = 0;
+  let secretClicks = 0;
+  let secretTimeout = null;
+
+  const secretTargets = [
+    { letter: 'V', count: 3 },
+    { letter: 'D', count: 2 },
+    { letter: 'L', count: 2 },
+    { letter: 'Y', count: 4 }
+  ];
+
+  document.querySelectorAll('.secret-letter').forEach(span => {
+    span.addEventListener('click', (e) => {
+      if (adminLoggedIn) return; // If already admin, don't trigger
       
-      logoClicks++;
-      clearTimeout(logoClickTimeout);
-      if (logoClicks >= 3) {
-        logoClicks = 0;
-        e.preventDefault();
-        window.location.hash = '#admin';
+      e.preventDefault();
+      e.stopPropagation();
+
+      const letter = span.getAttribute('data-letter');
+      const currentTarget = secretTargets[secretStage];
+
+      clearTimeout(secretTimeout);
+      secretTimeout = setTimeout(() => {
+        secretStage = 0;
+        secretClicks = 0;
+      }, 4000); // 4-second timeout to reset sequence
+
+      if (letter === currentTarget.letter) {
+        secretClicks++;
+        if (secretClicks >= currentTarget.count) {
+          secretStage++;
+          secretClicks = 0;
+          
+          if (secretStage >= secretTargets.length) {
+            // Secret sequence matched completely!
+            secretStage = 0;
+            secretClicks = 0;
+            clearTimeout(secretTimeout);
+            window.location.hash = '#admin';
+          }
+        }
       } else {
-        logoClickTimeout = setTimeout(() => { logoClicks = 0; }, 1000);
+        // Wrong letter clicked -> reset sequence
+        secretStage = 0;
+        secretClicks = 0;
       }
     });
-  }
+  });
 
   // Hidden Trigger 2: Alt + Shift + A Key shortcut
   window.addEventListener('keydown', (e) => {
@@ -438,6 +475,9 @@ function renderHome() {
     searchHeader.classList.add('hidden');
     heroBlock.classList.remove('hidden');
 
+    // Render Color Tone Filter Swatches
+    renderToneFilterSwatches();
+
     if (collectionsState.length === 0) {
       grid.innerHTML = `
         <div class="col-span-full py-16 text-center text-zinc-500 tracking-wider text-sm">
@@ -447,10 +487,82 @@ function renderHome() {
       return;
     }
 
-    collectionsState.forEach(col => {
+    // Filter collections by selected tone if activeToneFilter !== 'All'
+    let filteredCollections = [...collectionsState];
+    if (activeToneFilter !== 'All') {
+      filteredCollections = collectionsState.filter(c => {
+        if (!c.color_tone) return false;
+        const toneLower = c.color_tone.toLowerCase();
+        const filterLower = activeToneFilter.toLowerCase();
+        return toneLower.includes(filterLower) || filterLower.includes(toneLower);
+      });
+    }
+
+    if (filteredCollections.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full py-16 text-center text-zinc-500 tracking-wider text-xs">
+          <p>NO COLLECTIONS MATCHING TONE "${activeToneFilter.toUpperCase()}".</p>
+          <button onclick="activeToneFilter='All'; renderHome();" class="text-white hover:underline text-xs mt-4 uppercase font-semibold">Show All Collections</button>
+        </div>
+      `;
+      return;
+    }
+
+    filteredCollections.forEach(col => {
       grid.appendChild(createCollectionCard(col, false));
     });
   }
+}
+
+// --- RENDER COLOR TONE SWATCHES ---
+function renderToneFilterSwatches() {
+  const container = document.getElementById('tone-swatches-grid');
+  const label = document.getElementById('active-tone-label');
+  if (!container) return;
+
+  if (label) {
+    label.textContent = `Showing: ${activeToneFilter.toUpperCase()}`;
+  }
+
+  // Default preset tone categories
+  const defaultTones = [
+    { id: 'All', label: 'All Tones (ทั้งหมด)' },
+    { id: 'Noir', label: 'Noir / Black (ดำ)' },
+    { id: 'Neutral', label: 'Neutral / White (ขาว/ครีม)' },
+    { id: 'Earth', label: 'Earth Tone (เอิร์ธโทน)' },
+    { id: 'Pastel', label: 'Pastel / Pink (พาสเทล)' },
+    { id: 'Warm', label: 'Warm Tone (โทนอุ่น)' },
+    { id: 'Cool', label: 'Cool / Blue (โทนเย็น)' }
+  ];
+
+  // Extract custom tone tags added to collections
+  const customTones = new Set();
+  collectionsState.forEach(c => {
+    if (c.color_tone && c.color_tone.trim().length > 0) {
+      const tone = c.color_tone.trim();
+      if (!defaultTones.some(t => t.id.toLowerCase() === tone.toLowerCase())) {
+        customTones.add(tone);
+      }
+    }
+  });
+
+  const allTones = [
+    ...defaultTones,
+    ...Array.from(customTones).map(t => ({ id: t, label: t }))
+  ];
+
+  container.innerHTML = '';
+  allTones.forEach(tone => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `tone-swatch-btn ${activeToneFilter.toLowerCase() === tone.id.toLowerCase() ? 'active' : ''}`;
+    btn.textContent = tone.label;
+    btn.onclick = () => {
+      activeToneFilter = tone.id;
+      renderHome();
+    };
+    container.appendChild(btn);
+  });
 }
 
 function createCollectionCard(col, isSearchMode = false) {
@@ -928,7 +1040,7 @@ function openModal(modalId) {
 }
 
 function closeModal() {
-  document.querySelectorAll('#collection-modal, #product-modal').forEach(modal => {
+  document.querySelectorAll('#collection-modal, #product-modal, #guide-modal').forEach(modal => {
     modal.classList.remove('opacity-100', 'pointer-events-auto');
     modal.classList.add('opacity-0', 'pointer-events-none');
   });
@@ -940,6 +1052,7 @@ window.openCollectionModal = function(id = null) {
   const imageInput = document.getElementById('collection-image-input');
   const showcaseInput = document.getElementById('collection-showcase-input');
   const descInput = document.getElementById('collection-desc-input');
+  const toneInput = document.getElementById('collection-tone-input');
   const editId = document.getElementById('collection-edit-id');
   const header = document.getElementById('collection-modal-title');
 
@@ -954,6 +1067,7 @@ window.openCollectionModal = function(id = null) {
     imageInput.value = col.image;
     showcaseInput.value = col.showcase_image || '';
     descInput.value = col.description || '';
+    if (toneInput) toneInput.value = col.color_tone || '';
 
     // Show delete button in edit mode
     const deleteBtn = document.getElementById('collection-delete-btn');
@@ -966,6 +1080,7 @@ window.openCollectionModal = function(id = null) {
     imageInput.value = '';
     showcaseInput.value = '';
     descInput.value = '';
+    if (toneInput) toneInput.value = '';
 
     // Hide delete button in create mode
     const deleteBtn = document.getElementById('collection-delete-btn');
@@ -999,6 +1114,8 @@ async function handleCollectionSubmit(e) {
   const id = document.getElementById('collection-edit-id').value;
   const title = document.getElementById('collection-title-input').value.trim();
   const description = document.getElementById('collection-desc-input').value.trim();
+  const toneInput = document.getElementById('collection-tone-input');
+  const color_tone = toneInput ? toneInput.value.trim() : null;
   
   const fileInput = document.getElementById('collection-image-file');
   let image = document.getElementById('collection-image-input').value.trim();
@@ -1054,13 +1171,13 @@ async function handleCollectionSubmit(e) {
       // UPDATE
       result = await supabaseClient
         .from('collections')
-        .update({ title, image, showcase_image: showcase_image || null, description })
+        .update({ title, image, showcase_image: showcase_image || null, color_tone: color_tone || null, description })
         .eq('id', id);
     } else {
       // INSERT
       result = await supabaseClient
         .from('collections')
-        .insert([{ title, image, showcase_image: showcase_image || null, description }]);
+        .insert([{ title, image, showcase_image: showcase_image || null, color_tone: color_tone || null, description }]);
     }
 
     if (result.error) throw result.error;
@@ -1276,9 +1393,11 @@ async function handleSettingsSubmit(e) {
   e.preventDefault();
   const hero_title = document.getElementById('setting-hero-title').value.trim();
   const hero_subtitle = document.getElementById('setting-hero-subtitle').value.trim();
-  const hero_image = document.getElementById('setting-hero-image').value.trim();
   const tiktok_link = document.getElementById('setting-tiktok-link').value.trim();
   const lemon8_link = document.getElementById('setting-lemon8-link').value.trim();
+  
+  const heroImageFile = document.getElementById('setting-hero-image-file');
+  let hero_image = document.getElementById('setting-hero-image').value.trim();
 
   const submitBtn = e.target.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
@@ -1286,6 +1405,18 @@ async function handleSettingsSubmit(e) {
   submitBtn.disabled = true;
 
   try {
+    // Upload local background image file if selected
+    if (heroImageFile && heroImageFile.files.length > 0) {
+      submitBtn.textContent = "Uploading Background Image...";
+      hero_image = await uploadImageFile(heroImageFile.files[0]);
+      document.getElementById('setting-hero-image').value = hero_image;
+    }
+
+    if (!hero_image) {
+      alert("Please upload a hero background image OR enter an image URL.");
+      return;
+    }
+
     const updates = [
       { key: 'hero_title', value: hero_title },
       { key: 'hero_subtitle', value: hero_subtitle },

@@ -10,12 +10,14 @@ CREATE TABLE collections (
     title TEXT NOT NULL,
     image TEXT NOT NULL,
     showcase_image TEXT,
+    color_tone TEXT,
     description TEXT,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
--- Migration: Add showcase_image to existing table (run in Supabase SQL editor if table already exists)
+-- Migration: Add showcase_image and color_tone to existing table (run in Supabase SQL editor if table already exists)
 ALTER TABLE collections ADD COLUMN IF NOT EXISTS showcase_image TEXT;
+ALTER TABLE collections ADD COLUMN IF NOT EXISTS color_tone TEXT;
 
 -- Create Products Table
 CREATE TABLE products (

@@ -58,9 +58,16 @@
   <!-- Header Navigation -->
   <header class="sticky top-0 z-40 bg-brand-black/80 backdrop-blur-md border-b border-white/5 py-5 px-6 lg:px-12 transition-all duration-300">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 items-center justify-between">
-      <!-- Logo -->
-      <a href="#home" class="brand-logo text-2xl lg:text-3xl font-normal tracking-[0.25em] text-white hover:opacity-85 transition-opacity">
-        VANDALYN
+      <!-- Logo with individual interactive letters for secret sequence trigger -->
+      <a href="#home" class="brand-logo text-2xl lg:text-3xl font-normal tracking-[0.2em] text-white hover:opacity-90 transition-opacity inline-flex items-center select-none">
+        <span class="secret-letter hover:text-amber-300 transition-colors" data-letter="V">V</span>
+        <span class="secret-letter hover:text-amber-300 transition-colors" data-letter="A">A</span>
+        <span class="secret-letter hover:text-amber-300 transition-colors" data-letter="N">N</span>
+        <span class="secret-letter hover:text-amber-300 transition-colors" data-letter="D">D</span>
+        <span class="secret-letter hover:text-amber-300 transition-colors" data-letter="A">A</span>
+        <span class="secret-letter hover:text-amber-300 transition-colors" data-letter="L">L</span>
+        <span class="secret-letter hover:text-amber-300 transition-colors" data-letter="Y">Y</span>
+        <span class="secret-letter hover:text-amber-300 transition-colors" data-letter="N">N</span>
       </a>
 
       <!-- Search Bar -->
@@ -77,6 +84,11 @@
 
       <!-- Nav Links -->
       <nav class="flex flex-wrap items-center gap-x-4 lg:gap-x-5 gap-y-2 text-[10px] uppercase tracking-[0.15em]">
+        <button id="open-guide-btn" class="hover-underline text-amber-300 hover:text-amber-200 transition-colors flex items-center gap-1 font-medium">
+          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          คำแนะนำการใช้งาน
+        </button>
+        <span class="text-white/10">|</span>
         <a href="#home" class="hover-underline text-white/70 hover:text-white transition-colors">Collections</a>
         <span class="text-white/10">|</span>
         <a href="#category/เสื้อ" class="hover-underline text-white/70 hover:text-white transition-colors">เสื้อ</a>
@@ -131,6 +143,22 @@
               </a>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Color Tone Palette Filter Bar -->
+      <div id="tone-filter-container" class="mb-12 border border-white/5 bg-zinc-950/60 backdrop-blur p-5 rounded-none animate-fade-in-up">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 pb-3 border-b border-white/5">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+            </svg>
+            <span class="text-xs uppercase tracking-[0.2em] font-medium text-zinc-200">Color Tone Filter / เลือกคัดกรองตามโทนสี</span>
+          </div>
+          <span id="active-tone-label" class="text-[10px] uppercase tracking-widest text-amber-300 font-mono">Showing: ALL TONES</span>
+        </div>
+        <div id="tone-swatches-grid" class="flex flex-wrap items-center justify-start gap-2.5">
+          <!-- Tone Swatch buttons dynamically rendered -->
         </div>
       </div>
 
@@ -385,9 +413,18 @@
               <textarea id="setting-hero-subtitle" rows="3" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none resize-none" required></textarea>
             </div>
 
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[10px] uppercase tracking-wider text-zinc-400">Hero Banner Image URL</label>
-              <input type="url" id="setting-hero-image" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" required>
+            <div class="flex flex-col gap-2">
+              <label class="text-[10px] uppercase tracking-wider text-zinc-400">Hero Banner Background Image</label>
+              <!-- Upload from device -->
+              <div class="flex flex-col gap-1.5">
+                <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Upload from device:</span>
+                <input type="file" id="setting-hero-image-file" accept="image/*" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-1.5 text-zinc-400 focus:outline-none rounded-none">
+              </div>
+              <!-- OR Paste URL -->
+              <div class="flex flex-col gap-1.5">
+                <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Or paste an Image URL link:</span>
+                <input type="url" id="setting-hero-image" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" required>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -482,7 +519,16 @@
 
         <div class="flex flex-col gap-1.5">
           <label class="text-[10px] uppercase tracking-wider text-zinc-400">Collection Description</label>
-          <textarea id="collection-desc-input" rows="4" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none resize-none" placeholder="Enter collection vision statement..."></textarea>
+          <textarea id="collection-desc-input" rows="3" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none resize-none" placeholder="Enter collection vision statement..."></textarea>
+        </div>
+
+        <!-- Color Tone Input (Admin set tone tag, hidden from public card view) -->
+        <div class="flex flex-col gap-1.5 border-t border-white/5 pt-4">
+          <label class="text-[10px] uppercase tracking-wider text-amber-300 font-medium flex items-center justify-between">
+            <span>Color Tone / โทนสี</span>
+            <span class="text-zinc-500 text-[9px] font-normal lowercase">*เห็นเฉพาะคุณในโหมดแก้ไข ไม่แสดงตัวหนังสือให้คนดู</span>
+          </label>
+          <input type="text" id="collection-tone-input" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" placeholder="เช่น Black, White, Earth Tone, Beige, Pastel, Warm, Cool">
         </div>
 
         <div class="flex items-center justify-between mt-2">
@@ -578,6 +624,81 @@
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: VIEWER RECOMMENDATION GUIDE -->
+  <div id="guide-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 opacity-0 pointer-events-none transition-opacity duration-300 backdrop-blur-sm">
+    <div class="glass-panel w-full max-w-2xl p-6 sm:p-8 relative flex flex-col gap-6 shadow-2xl animate-fade-in-up border border-white/10 bg-zinc-950">
+      <button class="modal-close-btn absolute right-6 top-6 text-zinc-400 hover:text-white text-xl">&times;</button>
+      
+      <div class="border-b border-white/10 pb-4">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-amber-400 text-lg">✨</span>
+          <h4 class="text-lg font-normal uppercase tracking-widest text-white">คำแนะนำการใช้งาน & การค้นหาชุด</h4>
+        </div>
+        <p class="text-[11px] text-zinc-400 tracking-wider">WELCOME TO VANDALYN WARDROBE GUIDE</p>
+      </div>
+
+      <div class="flex flex-col gap-5 text-xs text-zinc-300 leading-relaxed overflow-y-auto max-h-[70vh] pr-2">
+        <!-- Tip 1: Color Tone -->
+        <div class="p-4 border border-white/5 bg-zinc-900/60 rounded flex gap-4 items-start">
+          <div class="w-10 h-10 shrink-0 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded flex items-center justify-center text-lg">
+            🎨
+          </div>
+          <div>
+            <h5 class="text-white font-medium uppercase tracking-wider text-xs mb-1">1. การค้นหาตามโทนสี (Color Tone Selection)</h5>
+            <p class="text-zinc-400 text-[11px]">
+              ในหน้าแรก (Collections) คุณสามารถคลิกเลือกปุ่มโทนสี เช่น <b>Noir / ดำ</b>, <b>Neutral / ขาวครีม</b>, <b>Earth Tone</b> หรือ <b>Pastel</b> ด้านบนแถบ Tone Palette เพื่อกรองดูเฉพาะคอลเล็กชั่นชุดที่มีโทนสีแมตช์ตามที่คุณต้องการได้ทันที
+            </p>
+          </div>
+        </div>
+
+        <!-- Tip 2: Categories -->
+        <div class="p-4 border border-white/5 bg-zinc-900/60 rounded flex gap-4 items-start">
+          <div class="w-10 h-10 shrink-0 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded flex items-center justify-center text-lg">
+            👗
+          </div>
+          <div>
+            <h5 class="text-white font-medium uppercase tracking-wider text-xs mb-1">2. เลือกดูตามประเภทเสื้อผ้า (Categories)</h5>
+            <p class="text-zinc-400 text-[11px]">
+              คลิกเมนูด้านบน เช่น <b>เสื้อ, กางเกง, กระโปรง, รองเท้า, เครื่องประดับ</b> เพื่อดูเฉพาะประเภทชิ้นงานที่คุณกำลังตามหาจากทุกคอลเล็กชั่น
+            </p>
+          </div>
+        </div>
+
+        <!-- Tip 3: Search Bar -->
+        <div class="p-4 border border-white/5 bg-zinc-900/60 rounded flex gap-4 items-start">
+          <div class="w-10 h-10 shrink-0 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded flex items-center justify-center text-lg">
+            🔍
+          </div>
+          <div>
+            <h5 class="text-white font-medium uppercase tracking-wider text-xs mb-1">3. ค้นหาด้วยชื่อชุดหรือคีย์เวิร์ด (Search Bar)</h5>
+            <p class="text-zinc-400 text-[11px]">
+              พิมพ์ชื่อคอลเล็กชั่น หรือคีย์เวิร์ดลักษณะชุดที่ช่อง <b>Search...</b> ด้านบน ระบบจะทำการค้นหาและแสดงรายการที่ตรงกันขึ้นมาทันที
+            </p>
+          </div>
+        </div>
+
+        <!-- Tip 4: Order & Social Links -->
+        <div class="p-4 border border-white/5 bg-zinc-900/60 rounded flex gap-4 items-start">
+          <div class="w-10 h-10 shrink-0 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded flex items-center justify-center text-lg">
+            🛍️
+          </div>
+          <div>
+            <h5 class="text-white font-medium uppercase tracking-wider text-xs mb-1">4. การดูพิกัดชุด & สั่งซื้อ (Order Piece / Social)</h5>
+            <p class="text-zinc-400 text-[11px]">
+              เมื่อถูกใจชิ้นไหน ให้คลิกปุ่ม <b>Order Piece</b> เพื่อไปยังพิกัดร้านค้าบน Shopee หรือช่องทางจำหน่ายอย่างเป็นทางการทันที และกดไอคอน <b>TikTok</b> หรือ <b>Lemon8</b> บริเวณ Banner บนสุดเพื่อดูรีวิวชุดเพิ่มเติม
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-white/5">
+        <button type="button" class="modal-close-btn bg-white text-black hover:bg-zinc-200 font-semibold px-6 py-2 text-[10px] uppercase tracking-wider transition-colors rounded-none">
+          เข้าใจแล้ว / เข้าชมสินค้า
+        </button>
+      </div>
     </div>
   </div>
 
