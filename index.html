@@ -90,6 +90,7 @@
         </button>
         <span class="text-white/10">|</span>
         <a href="#home" class="hover-underline text-white/70 hover:text-white transition-colors">Collections</a>
+        <a href="#tones" class="hover-underline text-amber-300 hover:text-amber-200 transition-colors font-medium">โทนสี</a>
         <span class="text-white/10">|</span>
         <a href="#category/เสื้อ" class="hover-underline text-white/70 hover:text-white transition-colors">เสื้อ</a>
         <a href="#category/กางเกง" class="hover-underline text-white/70 hover:text-white transition-colors">กางเกง</a>
@@ -257,6 +258,50 @@
       <!-- Products Grid -->
       <div id="category-products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         <!-- Category Products dynamically loaded here -->
+      </div>
+    </section>
+
+    <!-- ==============================================
+         ROUTE: COLOR TONE COLLECTIONS
+         ============================================== -->
+    <section id="route-tones" class="route-section animate-fade-in-up">
+      <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between border-b border-white/5 pb-6 gap-4">
+        <div>
+          <h2 class="text-3xl lg:text-4xl font-light tracking-widest text-white uppercase">COLOR TONE COLLECTIONS</h2>
+          <p class="text-zinc-400 text-xs md:text-sm tracking-wider mt-1 uppercase">คอลเล็กชั่นโทนสี เลือกดูชุดตามโทนสีที่คุณต้องการ</p>
+        </div>
+        <div id="tones-admin-bar" class="hidden">
+          <button id="admin-new-tone-btn" onclick="openToneModal()" class="bg-white text-black hover:bg-zinc-200 font-semibold text-[11px] uppercase tracking-widest py-2.5 px-5 transition-colors rounded-none flex items-center gap-2">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            + Add Tone Collection
+          </button>
+        </div>
+      </div>
+
+      <!-- Tones Grid (Small visual cards per color tone) -->
+      <div id="tones-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Dynamic Tone Cards loaded here -->
+      </div>
+    </section>
+
+    <!-- ==============================================
+         ROUTE: SINGLE TONE DETAIL SHOWCASE
+         ============================================== -->
+    <section id="route-tone-detail" class="route-section animate-fade-in-up">
+      <!-- Back Button -->
+      <a href="#tones" class="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-xs uppercase tracking-widest mb-10 group">
+        <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        Back to Tone Collections
+      </a>
+
+      <div id="tone-detail-header" class="mb-12 border-b border-white/5 pb-6">
+        <h2 id="tone-detail-title" class="text-4xl lg:text-5xl font-light tracking-widest text-white uppercase mb-2">TONE</h2>
+        <p id="tone-detail-desc" class="text-zinc-400 text-xs md:text-sm max-w-3xl leading-relaxed font-light uppercase tracking-wider"></p>
+      </div>
+
+      <!-- Matching Collections / Products Grid -->
+      <div id="tone-collections-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Dynamically loaded here -->
       </div>
     </section>
 
@@ -701,6 +746,64 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal: TONE CREATION / EDIT -->
+  <div id="tone-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="glass-panel w-full max-w-xl p-8 relative flex flex-col gap-6 shadow-2xl animate-fade-in-up">
+      <button class="modal-close-btn absolute right-6 top-6 text-zinc-400 hover:text-white text-xl">&times;</button>
+      
+      <div class="border-b border-white/5 pb-3">
+        <h4 id="tone-modal-title" class="text-lg font-normal uppercase tracking-widest text-white">Create Tone Collection</h4>
+        <p class="text-[10px] text-zinc-500 tracking-wider mt-1">ADD OR MODIFY A COLOR TONE CARD</p>
+      </div>
+
+      <form id="tone-form" class="flex flex-col gap-5">
+        <input type="hidden" id="tone-edit-id">
+        
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[10px] uppercase tracking-wider text-zinc-400">Tone Name / ชื่อโทนสี *</label>
+          <input type="text" id="tone-name-input" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white tracking-wide focus:outline-none rounded-none" required placeholder="เช่น NOIR / BLACK, EARTH TONE, PASTEL">
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label class="text-[10px] uppercase tracking-wider text-zinc-400">Tone Thumbnail (รูปภาพสี)</label>
+          
+          <!-- Upload from device -->
+          <div class="flex flex-col gap-1.5">
+            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Upload from device:</span>
+            <input type="file" id="tone-image-file" accept="image/*" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-1.5 text-zinc-400 focus:outline-none rounded-none">
+          </div>
+          
+          <!-- OR Paste URL -->
+          <div class="flex flex-col gap-1.5">
+            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Or paste an Image URL link:</span>
+            <input type="url" id="tone-image-input" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" placeholder="https://images.unsplash.com/...">
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[10px] uppercase tracking-wider text-zinc-400">Description / คำอธิบายโทนสี</label>
+          <textarea id="tone-desc-input" rows="3" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none resize-none" placeholder="เช่น โทนสีน้ำตาล เบจ อุ่น เป็นธรรมชาติ..."></textarea>
+        </div>
+
+        <div class="flex items-center justify-between mt-2">
+          <button type="button" id="tone-delete-btn" class="hidden border border-red-900/40 hover:border-red-500 text-red-500/60 hover:text-red-400 px-5 py-2 text-[10px] uppercase tracking-wider transition-colors rounded-none" onclick="handleToneDelete()">
+            ลบคอลเลคชั่นโทนสีนี้
+          </button>
+          <div class="flex gap-3 ml-auto">
+            <button type="button" class="modal-close-btn border border-white/10 hover:border-white/20 px-5 py-2 text-[10px] uppercase tracking-wider text-zinc-400 hover:text-white transition-colors rounded-none">Cancel</button>
+            <button type="submit" class="bg-white text-black hover:bg-zinc-200 font-semibold px-6 py-2 text-[10px] uppercase tracking-wider transition-colors rounded-none">Save Tone</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Floating Guide Quick-Button for Mobile Devices -->
+  <button id="mobile-guide-fab" class="md:hidden fixed bottom-6 left-6 z-40 bg-amber-400 text-black font-semibold text-xs px-3.5 py-2.5 rounded-full shadow-2xl flex items-center gap-1.5 border border-amber-300 tracking-wider">
+    <span class="text-sm">✨</span>
+    <span>คำแนะนำ</span>
+  </button>
 
 </body>
 </html>
