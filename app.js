@@ -43,11 +43,14 @@ let previewMode = false;
 
 // --- EVENT LISTENERS (ON INITIAL LOAD) ---
 document.addEventListener('DOMContentLoaded', () => {
-  if (!supabaseClient) return; // Exit if not configured
-
-  // Setup Routing
+  // Setup Routing immediately so page is never blank
   window.addEventListener('hashchange', handleRoute);
   handleRoute(); // Call once on start
+
+  if (!supabaseClient) {
+    console.warn("Supabase client not initialized. Operating in fallback mode.");
+    return;
+  }
 
   // Fetch initial data
   fetchInitialData();
@@ -213,12 +216,12 @@ function updateAdminUIState() {
 let pageVisitsState = 0;
 
 async function fetchInitialData() {
-  await Promise.all([
-    fetchCollections(),
-    fetchProducts(),
-    fetchSettings(),
-    fetchTones()
-  ]);
+  if (!supabaseClient) return;
+  
+  try { await fetchCollections(); } catch (err) { console.error("fetchCollections error:", err.message); }
+  try { await fetchProducts(); } catch (err) { console.error("fetchProducts error:", err.message); }
+  try { await fetchSettings(); } catch (err) { console.error("fetchSettings error:", err.message); }
+  try { await fetchTones(); } catch (err) { console.error("fetchTones error:", err.message); }
   
   // Re-render current page once initial data arrives
   handleRoute();
