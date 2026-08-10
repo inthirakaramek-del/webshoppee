@@ -145,35 +145,7 @@ input[type="checkbox"]:checked {
   }
 }
 
-/* Color Tone Swatches & Filters */
-.tone-swatch-btn {
-  display: inline-flex;
-  items-center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.85rem;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: rgba(13, 13, 13, 0.8);
-  color: #a1a1aa;
-  transition: all 0.25s ease;
-  cursor: pointer;
-  user-select: none;
-}
 
-.tone-swatch-btn:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-  transform: translateY(-1px);
-}
-
-.tone-swatch-btn.active {
-  background-color: #ffffff;
-  color: #000000;
-  border-color: #ffffff;
-  font-weight: 600;
-}
 
 /* Secret Logo Letter Interaction */
 .secret-letter {

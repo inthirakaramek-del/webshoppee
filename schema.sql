@@ -159,32 +159,6 @@ WITH CHECK (true);
 -- Enable Realtime for settings table
 ALTER PUBLICATION supabase_realtime ADD TABLE settings;
 
--- Create Tone Categories Table
-CREATE TABLE IF NOT EXISTS tone_categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL UNIQUE,
-    image TEXT NOT NULL,
-    description TEXT,
-    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
-);
 
--- Enable RLS and Realtime for tone_categories
-ALTER TABLE tone_categories ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow public read access on tone_categories" 
-ON tone_categories FOR SELECT USING (true);
-
-CREATE POLICY "Allow all operations for everyone on tone_categories" 
-ON tone_categories FOR ALL USING (true) WITH CHECK (true);
-
-ALTER PUBLICATION supabase_realtime ADD TABLE tone_categories;
-
--- Insert Sample Tone Categories
-INSERT INTO tone_categories (id, name, image, description) VALUES
-('c1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c', 'NOIR / BLACK', 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop', 'โทนสีดำ คลาสสิก เรียบหรู ทรงพลัง'),
-('d2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d', 'NEUTRAL / WHITE', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop', 'โทนสีขาว ครีม มินิมอล สะอาดตา'),
-('e3c4d5e6-f7a8-9b0c-1d2e-3f4a5b6c7d8e', 'EARTH TONE', 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop', 'โทนสีน้ำตาล เบจ อุ่น เป็นธรรมชาติ'),
-('f4d5e6f7-a8b9-0c1d-2e3f-4a5b6c7d8e9f', 'PASTEL / PINK', 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=800&auto=format&fit=crop', 'โทนสีพาสเทล ชมพู ละมุน อ่อนหวาน')
-ON CONFLICT (name) DO NOTHING;
 
 

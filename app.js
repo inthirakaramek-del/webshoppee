@@ -34,11 +34,8 @@ if (isConfigured) {
 let currentRoute = 'home';
 let activeCollectionId = null;
 let activeCategoryFilter = 'All';
-let activeToneFilter = 'All';
-let activeToneName = '';
 let searchQuery = '';
 let settingsState = {};
-let tonesState = [];
 let previewMode = false;
 
 // --- EVENT LISTENERS (ON INITIAL LOAD) ---
@@ -221,7 +218,6 @@ async function fetchInitialData() {
   try { await fetchCollections(); } catch (err) { console.error("fetchCollections error:", err.message); }
   try { await fetchProducts(); } catch (err) { console.error("fetchProducts error:", err.message); }
   try { await fetchSettings(); } catch (err) { console.error("fetchSettings error:", err.message); }
-  try { await fetchTones(); } catch (err) { console.error("fetchTones error:", err.message); }
   
   // Re-render current page once initial data arrives
   handleRoute();
@@ -242,31 +238,10 @@ async function fetchSettings() {
     renderSettings();
   } catch (err) {
     console.error("Error fetching settings:", err.message);
-}
-
-async function fetchTones() {
-  try {
-    const { data, error } = await supabaseClient
-      .from('tone_categories')
-      .select('*')
-      .order('name', { ascending: true });
-    
-    if (error) throw error;
-    tonesState = (data && data.length > 0) ? data : getDefaultTones();
-  } catch (err) {
-    console.warn("Using default tone categories fallback:", err.message);
-    tonesState = getDefaultTones();
   }
 }
 
-function getDefaultTones() {
-  return [
-    { id: 'noir-default', name: 'NOIR / BLACK', image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop', description: 'โทนสีดำ คลาสสิก เรียบหรู ทรงพลัง' },
-    { id: 'white-default', name: 'NEUTRAL / WHITE', image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop', description: 'โทนสีขาว ครีม มินิมอล สะอาดตา' },
-    { id: 'earth-default', name: 'EARTH TONE', image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop', description: 'โทนสีน้ำตาล เบจ อุ่น เป็นธรรมชาติ' },
-    { id: 'pastel-default', name: 'PASTEL / PINK', image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=800&auto=format&fit=crop', description: 'โทนสีพาสเทล ชมพู ละมุน อ่อนหวาน' }
-  ];
-}
+
 
 function renderSettings() {
   const heroTitle = document.getElementById('hero-banner-title');
@@ -409,15 +384,7 @@ function setupRealtimeSubscriptions() {
     })
     .subscribe();
 
-  // Subscribe to tone_categories schema changes
-  supabaseClient.channel('public:tone_categories')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'tone_categories' }, async (payload) => {
-      console.log('Realtime Tone Categories change:', payload);
-      showSyncIndicator();
-      await fetchTones();
-      if (currentRoute === 'tones') renderTones();
-    })
-    .subscribe();
+
 
   // Subscribe to settings schema changes
   supabaseClient.channel('public:settings')
@@ -455,17 +422,6 @@ function handleRoute() {
     activeCategoryFilter = decodeURIComponent(pathParts[1]);
     document.getElementById('route-category-detail').classList.add('active');
     renderCategoryDetail();
-  }
-  else if (hash === '#tones') {
-    currentRoute = 'tones';
-    document.getElementById('route-tones').classList.add('active');
-    renderTones();
-  } 
-  else if (pathParts[0] === '#tone' && pathParts[1]) {
-    currentRoute = 'tone-detail';
-    activeToneName = decodeURIComponent(pathParts[1]);
-    document.getElementById('route-tone-detail').classList.add('active');
-    renderToneDetail();
   }
   else if (hash === '#admin') {
     currentRoute = 'admin';
@@ -529,9 +485,6 @@ function renderHome() {
     searchHeader.classList.add('hidden');
     heroBlock.classList.remove('hidden');
 
-    // Render Color Tone Filter Swatches
-    renderToneFilterSwatches();
-
     if (collectionsState.length === 0) {
       grid.innerHTML = `
         <div class="col-span-full py-16 text-center text-zinc-500 tracking-wider text-sm">
@@ -541,82 +494,10 @@ function renderHome() {
       return;
     }
 
-    // Filter collections by selected tone if activeToneFilter !== 'All'
-    let filteredCollections = [...collectionsState];
-    if (activeToneFilter !== 'All') {
-      filteredCollections = collectionsState.filter(c => {
-        if (!c.color_tone) return false;
-        const toneLower = c.color_tone.toLowerCase();
-        const filterLower = activeToneFilter.toLowerCase();
-        return toneLower.includes(filterLower) || filterLower.includes(toneLower);
-      });
-    }
-
-    if (filteredCollections.length === 0) {
-      grid.innerHTML = `
-        <div class="col-span-full py-16 text-center text-zinc-500 tracking-wider text-xs">
-          <p>NO COLLECTIONS MATCHING TONE "${activeToneFilter.toUpperCase()}".</p>
-          <button onclick="activeToneFilter='All'; renderHome();" class="text-white hover:underline text-xs mt-4 uppercase font-semibold">Show All Collections</button>
-        </div>
-      `;
-      return;
-    }
-
-    filteredCollections.forEach(col => {
+    collectionsState.forEach(col => {
       grid.appendChild(createCollectionCard(col, false));
     });
   }
-}
-
-// --- RENDER COLOR TONE SWATCHES ---
-function renderToneFilterSwatches() {
-  const container = document.getElementById('tone-swatches-grid');
-  const label = document.getElementById('active-tone-label');
-  if (!container) return;
-
-  if (label) {
-    label.textContent = `Showing: ${activeToneFilter.toUpperCase()}`;
-  }
-
-  // Default preset tone categories
-  const defaultTones = [
-    { id: 'All', label: 'All Tones (ทั้งหมด)' },
-    { id: 'Noir', label: 'Noir / Black (ดำ)' },
-    { id: 'Neutral', label: 'Neutral / White (ขาว/ครีม)' },
-    { id: 'Earth', label: 'Earth Tone (เอิร์ธโทน)' },
-    { id: 'Pastel', label: 'Pastel / Pink (พาสเทล)' },
-    { id: 'Warm', label: 'Warm Tone (โทนอุ่น)' },
-    { id: 'Cool', label: 'Cool / Blue (โทนเย็น)' }
-  ];
-
-  // Extract custom tone tags added to collections
-  const customTones = new Set();
-  collectionsState.forEach(c => {
-    if (c.color_tone && c.color_tone.trim().length > 0) {
-      const tone = c.color_tone.trim();
-      if (!defaultTones.some(t => t.id.toLowerCase() === tone.toLowerCase())) {
-        customTones.add(tone);
-      }
-    }
-  });
-
-  const allTones = [
-    ...defaultTones,
-    ...Array.from(customTones).map(t => ({ id: t, label: t }))
-  ];
-
-  container.innerHTML = '';
-  allTones.forEach(tone => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = `tone-swatch-btn ${activeToneFilter.toLowerCase() === tone.id.toLowerCase() ? 'active' : ''}`;
-    btn.textContent = tone.label;
-    btn.onclick = () => {
-      activeToneFilter = tone.id;
-      renderHome();
-    };
-    container.appendChild(btn);
-  });
 }
 
 function createCollectionCard(col, isSearchMode = false) {
@@ -778,109 +659,7 @@ function renderCategoryDetail() {
   });
 }
 
-// --- VISITOR VIEW: RENDERING TONE COLLECTIONS GRID (#tones) ---
-function renderTones() {
-  const grid = document.getElementById('tones-grid');
-  const adminBar = document.getElementById('tones-admin-bar');
-  if (!grid) return;
 
-  if (adminBar) {
-    adminBar.classList.toggle('hidden', !adminLoggedIn || previewMode);
-  }
-
-  grid.innerHTML = '';
-
-  if (tonesState.length === 0) {
-    grid.innerHTML = `<div class="col-span-full py-16 text-center text-zinc-500 tracking-wider text-xs">NO COLOR TONE COLLECTIONS FOUND.</div>`;
-    return;
-  }
-
-  tonesState.forEach(tone => {
-    const div = document.createElement('div');
-    div.className = 'border border-white/5 aspect-[4/5] relative overflow-hidden flex flex-col justify-end p-5 bg-zinc-950 group hover-zoom animate-fade-in-up cursor-pointer';
-
-    const imgDiv = document.createElement('div');
-    imgDiv.className = 'absolute inset-0 bg-cover bg-center opacity-100 transition-transform duration-500';
-    imgDiv.style.backgroundImage = `url('${tone.image}')`;
-
-    const overlay = document.createElement('div');
-    overlay.className = 'absolute inset-0 bg-gradient-to-t from-black via-black/50 via-40% to-transparent z-10';
-
-    const content = document.createElement('div');
-    content.className = 'relative z-20 flex flex-col justify-between h-full';
-
-    // Count matching collections for this tone
-    const matchCount = collectionsState.filter(c => c.color_tone && c.color_tone.toLowerCase().includes(tone.name.toLowerCase())).length;
-
-    content.innerHTML = `
-      <div class="flex justify-between items-start">
-        <span class="bg-black/75 border border-white/10 px-2 py-0.5 text-[9px] uppercase tracking-widest text-amber-300 font-mono">
-          ${matchCount} Collections
-        </span>
-        ${(adminLoggedIn && !previewMode) ? `
-          <button onclick="event.stopPropagation(); openToneModal('${tone.id}')" class="text-zinc-300 hover:text-white text-[9px] uppercase tracking-widest border border-white/20 px-2 py-0.5 rounded bg-black/60 backdrop-blur">
-            Edit
-          </button>
-        ` : ''}
-      </div>
-      <div>
-        <h3 class="text-base sm:text-lg font-light tracking-widest text-white uppercase mb-1 group-hover:text-amber-200 transition-colors">${tone.name}</h3>
-        <p class="text-zinc-400 text-[10px] line-clamp-1 mb-3 font-light">${tone.description || ''}</p>
-        <a href="#tone/${encodeURIComponent(tone.name)}" class="inline-flex items-center gap-1.5 text-white text-[9px] uppercase tracking-widest font-semibold hover-underline">
-          View Outfits
-          <svg class="w-3 h-3 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-        </a>
-      </div>
-    `;
-
-    div.appendChild(imgDiv);
-    div.appendChild(overlay);
-    div.appendChild(content);
-
-    div.onclick = (e) => {
-      if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') {
-        window.location.hash = `#tone/${encodeURIComponent(tone.name)}`;
-      }
-    };
-
-    grid.appendChild(div);
-  });
-}
-
-// --- VISITOR VIEW: RENDERING SINGLE TONE DETAIL SHOWCASE (#tone/:name) ---
-function renderToneDetail() {
-  const title = document.getElementById('tone-detail-title');
-  const desc = document.getElementById('tone-detail-desc');
-  const grid = document.getElementById('tone-collections-grid');
-  if (!title || !grid) return;
-
-  const toneObj = tonesState.find(t => t.name.toLowerCase() === activeToneName.toLowerCase());
-
-  title.textContent = activeToneName.toUpperCase();
-  desc.textContent = toneObj ? toneObj.description : `OUTFITS AND COLLECTIONS TAGGED UNDER ${activeToneName.toUpperCase()}`;
-
-  grid.innerHTML = '';
-
-  // Filter collections matching tone
-  const matchingCollections = collectionsState.filter(c => {
-    if (!c.color_tone) return false;
-    return c.color_tone.toLowerCase().includes(activeToneName.toLowerCase()) || activeToneName.toLowerCase().includes(c.color_tone.toLowerCase());
-  });
-
-  if (matchingCollections.length === 0) {
-    grid.innerHTML = `
-      <div class="col-span-full py-16 text-center text-zinc-500 tracking-wider text-xs">
-        <p class="text-sm">NO COLLECTIONS ASSOCIATED WITH "${activeToneName.toUpperCase()}" YET.</p>
-        <p class="mt-2 text-zinc-600">Admin can assign "${activeToneName}" in the Edit Collection modal.</p>
-      </div>
-    `;
-    return;
-  }
-
-  matchingCollections.forEach(col => {
-    grid.appendChild(createCollectionCard(col, false));
-  });
-}
 
 function createProductCard(prod, isSearchMode = false) {
   const col = collectionsState.find(c => c.id === prod.collection_id);
@@ -1189,8 +968,6 @@ function setupModalBindings() {
   document.getElementById('collection-form').addEventListener('submit', handleCollectionSubmit);
   document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
   document.getElementById('brand-settings-form').addEventListener('submit', handleSettingsSubmit);
-  const toneForm = document.getElementById('tone-form');
-  if (toneForm) toneForm.addEventListener('submit', handleToneSubmit);
 }
 
 function openModal(modalId) {
@@ -1200,7 +977,7 @@ function openModal(modalId) {
 }
 
 function closeModal() {
-  document.querySelectorAll('#collection-modal, #product-modal, #guide-modal, #tone-modal').forEach(modal => {
+  document.querySelectorAll('#collection-modal, #product-modal, #guide-modal').forEach(modal => {
     modal.classList.remove('opacity-100', 'pointer-events-auto');
     modal.classList.add('opacity-0', 'pointer-events-none');
   });
@@ -1602,128 +1379,5 @@ async function handleSettingsSubmit(e) {
     submitBtn.disabled = false;
   }
 }
-}
 
-// --- TONE MODAL & CRUD FUNCTIONS ---
-window.openToneModal = function(id = null) {
-  const nameInput = document.getElementById('tone-name-input');
-  const imageInput = document.getElementById('tone-image-input');
-  const descInput = document.getElementById('tone-desc-input');
-  const editId = document.getElementById('tone-edit-id');
-  const header = document.getElementById('tone-modal-title');
-  const deleteBtn = document.getElementById('tone-delete-btn');
 
-  if (id) {
-    // EDIT MODE
-    header.textContent = "Edit Tone Collection";
-    const tone = tonesState.find(t => t.id === id);
-    if (!tone) return;
-
-    editId.value = tone.id;
-    nameInput.value = tone.name;
-    imageInput.value = tone.image;
-    descInput.value = tone.description || '';
-
-    if (deleteBtn) deleteBtn.classList.remove('hidden');
-  } else {
-    // CREATE MODE
-    header.textContent = "Create Tone Collection";
-    editId.value = '';
-    nameInput.value = '';
-    imageInput.value = '';
-    descInput.value = '';
-
-    if (deleteBtn) deleteBtn.classList.add('hidden');
-  }
-
-  // Clear file input
-  const fileInput = document.getElementById('tone-image-file');
-  if (fileInput) fileInput.value = '';
-
-  openModal('tone-modal');
-};
-
-window.handleToneDelete = async function() {
-  const id = document.getElementById('tone-edit-id').value;
-  const name = document.getElementById('tone-name-input').value || 'this tone';
-  if (!id) return;
-
-  const confirmed = confirm(`ต้องการลบคอลเลคชั่นโทนสี "${name}" ใช่ไหมคะ?`);
-  if (!confirmed) return;
-
-  closeModal();
-  await window.deleteToneCategory(id, name);
-};
-
-async function handleToneSubmit(e) {
-  e.preventDefault();
-  const id = document.getElementById('tone-edit-id').value;
-  const name = document.getElementById('tone-name-input').value.trim().toUpperCase();
-  const description = document.getElementById('tone-desc-input').value.trim();
-
-  const fileInput = document.getElementById('tone-image-file');
-  let image = document.getElementById('tone-image-input').value.trim();
-
-  const submitBtn = e.target.querySelector('button[type="submit"]');
-  const originalText = submitBtn.textContent;
-  submitBtn.textContent = "Saving Tone...";
-  submitBtn.disabled = true;
-
-  try {
-    if (fileInput && fileInput.files.length > 0) {
-      submitBtn.textContent = "Uploading Image...";
-      image = await uploadImageFile(fileInput.files[0]);
-    }
-
-    if (!image) {
-      alert("Please upload a tone thumbnail image OR paste an image URL.");
-      return;
-    }
-
-    let result;
-    if (id && !id.endsWith('-default')) {
-      // UPDATE
-      result = await supabaseClient
-        .from('tone_categories')
-        .update({ name, image, description })
-        .eq('id', id);
-    } else {
-      // INSERT
-      result = await supabaseClient
-        .from('tone_categories')
-        .insert([{ name, image, description }]);
-    }
-
-    if (result && result.error) throw result.error;
-
-    closeModal();
-    fetchTones();
-  } catch (err) {
-    alert("Error saving tone category: " + err.message);
-  } finally {
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
-  }
-}
-
-window.deleteToneCategory = async function(id, name) {
-  if (id.endsWith('-default')) {
-    alert("This default sample tone category cannot be deleted from the system.");
-    return;
-  }
-
-  try {
-    const tone = tonesState.find(t => t.id === id);
-    if (tone) await deleteImageFile(tone.image);
-
-    const { error } = await supabaseClient
-      .from('tone_categories')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-    fetchTones();
-  } catch (err) {
-    alert("Error deleting tone category: " + err.message);
-  }
-};
