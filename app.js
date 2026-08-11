@@ -168,11 +168,56 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- CORE UTILITIES ---
+// Explicit Natural Alphanumeric Sort (A2 comes BEFORE A11, A10 comes BEFORE A100, B101 comes BEFORE B200)
 function naturalSortCompare(aStr, bStr) {
   if (!aStr && !bStr) return 0;
   if (!aStr) return -1;
   if (!bStr) return 1;
-  return aStr.localeCompare(bStr, undefined, { numeric: true, sensitivity: 'base' });
+
+  const strA = String(aStr).trim();
+  const strB = String(bStr).trim();
+
+  // Split strings into chunks of digits (parsed as numbers) and non-digits (uppercase string)
+  const regex = /(\d+)|(\D+)/g;
+  const aChunks = [];
+  const bChunks = [];
+
+  let match;
+  regex.lastIndex = 0;
+  while ((match = regex.exec(strA)) !== null) {
+    if (match[1] !== undefined) {
+      aChunks.push(parseInt(match[1], 10));
+    } else {
+      aChunks.push(match[2].toUpperCase());
+    }
+  }
+
+  regex.lastIndex = 0;
+  while ((match = regex.exec(strB)) !== null) {
+    if (match[1] !== undefined) {
+      bChunks.push(parseInt(match[1], 10));
+    } else {
+      bChunks.push(match[2].toUpperCase());
+    }
+  }
+
+  const minLen = Math.min(aChunks.length, bChunks.length);
+  for (let i = 0; i < minLen; i++) {
+    const aVal = aChunks[i];
+    const bVal = bChunks[i];
+
+    if (aVal !== bVal) {
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return aVal - bVal; // Numeric integer comparison: 2 - 11 = -9 (A2 < A11)
+      }
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return aVal.localeCompare(bVal);
+      }
+      return typeof aVal === 'number' ? -1 : 1;
+    }
+  }
+
+  return aChunks.length - bChunks.length;
 }
 
 function showSyncIndicator() {
