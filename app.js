@@ -551,41 +551,39 @@ function renderHome() {
 
 function createCollectionCard(col, isSearchMode = false) {
   const div = document.createElement('div');
-  div.className = 'border border-white/5 aspect-[3/4] relative overflow-hidden flex flex-col justify-end p-8 bg-zinc-950 group hover-zoom animate-fade-in-up cursor-pointer';
+  div.className = 'border border-white/5 bg-zinc-950/40 flex flex-col group relative animate-fade-in-up cursor-pointer hover:border-white/20 transition-all';
   
-  // Background Image - full brightness, show true colors
-  const imgDiv = document.createElement('div');
-  imgDiv.className = 'absolute inset-0 bg-cover bg-center opacity-100 transition-opacity duration-500';
-  imgDiv.style.backgroundImage = `url('${col.image}')`;
-  
-  // Overlay - ONLY dark at the very bottom (bottom 50%) where text sits, transparent above
-  const overlay = document.createElement('div');
-  overlay.className = 'absolute inset-0 bg-gradient-to-t from-black via-black/60 via-30% to-transparent to-60% z-10';
-
-  // Details
-  const content = document.createElement('div');
-  content.className = 'relative z-20 flex flex-col';
-
-  content.innerHTML = `
-    ${isSearchMode ? `<span class="text-[9px] uppercase tracking-widest text-zinc-500 mb-1">Collection</span>` : ''}
-    <h3 class="text-2xl font-light tracking-widest text-white uppercase mb-2 group-hover:text-zinc-200 transition-colors">${col.title}</h3>
-    <p class="text-zinc-400 text-xs leading-relaxed font-light mb-6 line-clamp-2">${col.description || ''}</p>
-    <div class="flex items-center justify-between">
-      <a href="#collection/${col.id}" class="inline-flex items-center gap-2 text-white text-[10px] uppercase tracking-widest font-semibold hover-underline">
-        Explore Collection
-        <svg class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-      </a>
-      ${(adminLoggedIn && !previewMode) ? `
-        <button onclick="event.stopPropagation(); openCollectionModal('${col.id}')" class="text-zinc-400 hover:text-white text-[10px] uppercase tracking-widest border border-white/10 hover:border-white/30 px-3 py-1 rounded bg-black/40">
-          Edit
-        </button>
+  div.innerHTML = `
+    <!-- Unobstructed Collection Image Box (3:4 ratio) -->
+    <div class="aspect-[3/4] w-full relative overflow-hidden bg-zinc-900 border-b border-white/5 hover-zoom">
+      <img src="${col.image}" alt="${col.title}" class="w-full h-full object-cover">
+      ${isSearchMode ? `
+        <span class="absolute top-4 left-4 z-10 bg-black/80 border border-white/10 px-2.5 py-1 text-[9px] uppercase tracking-widest text-zinc-300">
+          Collection
+        </span>
       ` : ''}
     </div>
-  `;
 
-  div.appendChild(imgDiv);
-  div.appendChild(overlay);
-  div.appendChild(content);
+    <!-- Collection Details Below Image -->
+    <div class="p-6 flex flex-col flex-grow justify-between bg-zinc-950">
+      <div>
+        <h3 class="text-xl font-light tracking-widest text-white uppercase mb-2 group-hover:text-amber-200 transition-colors">${col.title}</h3>
+        <p class="text-zinc-400 text-xs leading-relaxed font-light line-clamp-2 mb-4">${col.description || ''}</p>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-white/5">
+        <a href="#collection/${col.id}" class="inline-flex items-center gap-2 text-white text-[10px] uppercase tracking-widest font-semibold hover-underline">
+          Explore Collection
+          <svg class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </a>
+        ${(adminLoggedIn && !previewMode) ? `
+          <button onclick="event.stopPropagation(); openCollectionModal('${col.id}')" class="text-zinc-400 hover:text-white text-[10px] uppercase tracking-widest border border-white/10 hover:border-white/30 px-3 py-1 bg-zinc-900 transition-colors">
+            Edit
+          </button>
+        ` : ''}
+      </div>
+    </div>
+  `;
 
   div.onclick = (e) => {
     if (!e.target.closest('button')) {
