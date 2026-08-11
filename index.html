@@ -395,16 +395,27 @@
             </div>
 
             <div class="flex flex-col gap-2">
-              <label class="text-[10px] uppercase tracking-wider text-zinc-400">Hero Banner Background Image</label>
-              <!-- Upload from device -->
-              <div class="flex flex-col gap-1.5">
-                <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Upload from device:</span>
-                <input type="file" id="setting-hero-image-file" accept="image/*" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-1.5 text-zinc-400 focus:outline-none rounded-none">
+              <label class="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">Hero Banner Background Image</label>
+              
+              <div class="flex flex-col sm:flex-row items-center gap-4 p-3 bg-black/40 border border-white/10 rounded-none">
+                <div id="setting-hero-preview-box" class="w-24 h-16 shrink-0 bg-zinc-900 border border-white/10 flex items-center justify-center overflow-hidden relative">
+                  <img id="setting-hero-preview" src="" class="hidden w-full h-full object-cover">
+                  <span id="setting-hero-placeholder-text" class="text-[9px] text-zinc-600 text-center px-1">ยังไม่มีรูป</span>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                  <label for="setting-hero-image-file" class="cursor-pointer bg-white/10 hover:bg-white/20 text-white text-center py-2 px-4 text-xs font-medium tracking-wider border border-white/20 transition-colors">
+                    📁 เลือกรูปจากเครื่อง/มือถือ
+                  </label>
+                  <input type="file" id="setting-hero-image-file" accept="image/*" class="hidden">
+                  <button type="button" onclick="toggleUrlInput('setting-hero-url-wrapper')" class="text-[10px] text-zinc-400 hover:text-white text-left tracking-wide underline decoration-zinc-600">
+                    🔗 หรือใช้ลิงก์รูปภาพ (URL)
+                  </button>
+                </div>
               </div>
-              <!-- OR Paste URL -->
-              <div class="flex flex-col gap-1.5">
-                <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Or paste an Image URL link:</span>
-                <input type="url" id="setting-hero-image" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" required>
+
+              <div id="setting-hero-url-wrapper" class="hidden flex flex-col gap-1 mt-1">
+                <span class="text-[9px] text-zinc-500 uppercase tracking-wider">หรือวางลิงก์รูปภาพ (URL):</span>
+                <input type="url" id="setting-hero-image" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" placeholder="https://...">
               </div>
             </div>
 
@@ -447,8 +458,8 @@
        ============================================== -->
 
   <!-- Modal: COLLECTION CREATION / EDIT -->
-  <div id="collection-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 opacity-0 pointer-events-none transition-opacity duration-300">
-    <div class="glass-panel w-full max-w-xl p-8 relative flex flex-col gap-6 shadow-2xl animate-fade-in-up">
+  <div id="collection-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 opacity-0 pointer-events-none transition-opacity duration-300 overflow-y-auto">
+    <div class="glass-panel w-full max-w-xl p-6 sm:p-8 relative flex flex-col gap-6 shadow-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto my-auto custom-scrollbar">
       <button class="modal-close-btn absolute right-6 top-6 text-zinc-400 hover:text-white text-xl">&times;</button>
       
       <div class="border-b border-white/5 pb-3">
@@ -464,38 +475,59 @@
           <input type="text" id="collection-title-input" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white tracking-wide focus:outline-none rounded-none" required placeholder="e.g. MONOCHROME STAPLES">
         </div>
 
+        <!-- Thumbnail Image (Card Image) -->
         <div class="flex flex-col gap-2">
-          <label class="text-[10px] uppercase tracking-wider text-zinc-400">Collection Thumbnail (Card Image)</label>
+          <label class="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">รูปปกคอลเลคชั่น (Thumbnail Card) *</label>
           
-          <!-- Upload from device -->
-          <div class="flex flex-col gap-1.5">
-            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Upload from device:</span>
-            <input type="file" id="collection-image-file" accept="image/*" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-1.5 text-zinc-400 focus:outline-none rounded-none">
+          <div class="flex flex-col sm:flex-row items-center gap-4 p-3 bg-black/40 border border-white/10 rounded-none">
+            <div id="collection-image-preview-box" class="w-20 h-24 shrink-0 bg-zinc-900 border border-white/10 flex items-center justify-center overflow-hidden relative">
+              <img id="collection-image-preview" src="" class="hidden w-full h-full object-cover">
+              <span id="collection-image-placeholder-text" class="text-[9px] text-zinc-600 text-center px-1">ยังไม่มีรูป</span>
+            </div>
+            <div class="flex flex-col gap-2 w-full">
+              <label for="collection-image-file" class="cursor-pointer bg-white/10 hover:bg-white/20 text-white text-center py-2 px-4 text-xs font-medium tracking-wider border border-white/20 transition-colors">
+                📁 เลือกรูปจากเครื่อง/มือถือ
+              </label>
+              <input type="file" id="collection-image-file" accept="image/*" class="hidden">
+              <button type="button" onclick="toggleUrlInput('collection-image-url-wrapper')" class="text-[10px] text-zinc-400 hover:text-white text-left tracking-wide underline decoration-zinc-600">
+                🔗 หรือใช้ลิงก์รูปภาพ (URL)
+              </button>
+            </div>
           </div>
           
-          <!-- OR Paste URL -->
-          <div class="flex flex-col gap-1.5">
-            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Or paste an Image URL link:</span>
+          <div id="collection-image-url-wrapper" class="hidden flex flex-col gap-1 mt-1">
+            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">หรือวางลิงก์รูปภาพ (URL):</span>
             <input type="url" id="collection-image-input" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" placeholder="https://images.unsplash.com/...">
           </div>
         </div>
 
         <!-- Showcase Image (3:4 display at top of collection page) -->
         <div class="flex flex-col gap-2 border-t border-white/5 pt-4">
-          <label class="text-[10px] uppercase tracking-wider text-zinc-400">Showcase Image <span class="text-zinc-600">(แสดงบนสุดหน้าคอลเลคชั่น ขนาด 3:4)</span></label>
-          
-          <!-- Upload from device -->
-          <div class="flex flex-col gap-1.5">
-            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Upload from device:</span>
-            <input type="file" id="collection-showcase-file" accept="image/*" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-1.5 text-zinc-400 focus:outline-none rounded-none">
+          <div class="flex items-center justify-between">
+            <label class="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">รูปโชว์ชุดขนาดใหญ่ (Showcase Image 3:4)</label>
+            <span class="text-[9px] text-zinc-500">(แสดงบนสุดหน้าคอลเลคชั่น - ไม่ใส่ก็ได้)</span>
           </div>
-          
-          <!-- OR Paste URL -->
-          <div class="flex flex-col gap-1.5">
-            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Or paste an Image URL link:</span>
+
+          <div class="flex flex-col sm:flex-row items-center gap-4 p-3 bg-black/40 border border-white/10 rounded-none">
+            <div id="collection-showcase-preview-box" class="w-18 h-24 shrink-0 bg-zinc-900 border border-white/10 flex items-center justify-center overflow-hidden relative">
+              <img id="collection-showcase-preview" src="" class="hidden w-full h-full object-cover">
+              <span id="collection-showcase-placeholder-text" class="text-[9px] text-zinc-600 text-center px-1">ยังไม่มีรูป</span>
+            </div>
+            <div class="flex flex-col gap-2 w-full">
+              <label for="collection-showcase-file" class="cursor-pointer bg-white/10 hover:bg-white/20 text-white text-center py-2 px-4 text-xs font-medium tracking-wider border border-white/20 transition-colors">
+                📁 เลือกรูปจากเครื่อง/มือถือ
+              </label>
+              <input type="file" id="collection-showcase-file" accept="image/*" class="hidden">
+              <button type="button" onclick="toggleUrlInput('collection-showcase-url-wrapper')" class="text-[10px] text-zinc-400 hover:text-white text-left tracking-wide underline decoration-zinc-600">
+                🔗 หรือใช้ลิงก์รูปภาพ (URL)
+              </button>
+            </div>
+          </div>
+
+          <div id="collection-showcase-url-wrapper" class="hidden flex flex-col gap-1 mt-1">
+            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">หรือวางลิงก์รูปภาพ (URL):</span>
             <input type="url" id="collection-showcase-input" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" placeholder="https://images.unsplash.com/...">
           </div>
-          <span class="text-[9px] text-zinc-600 tracking-wide">ถ้าไม่ใส่ภาพนี้จะไม่แสดงอะไร</span>
         </div>
 
         <div class="flex flex-col gap-1.5">
@@ -518,8 +550,8 @@
   </div>
 
   <!-- Modal: PRODUCT CREATION / EDIT -->
-  <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 opacity-0 pointer-events-none transition-opacity duration-300">
-    <div class="glass-panel w-full max-w-xl p-8 relative flex flex-col gap-6 shadow-2xl animate-fade-in-up">
+  <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 opacity-0 pointer-events-none transition-opacity duration-300 overflow-y-auto">
+    <div class="glass-panel w-full max-w-xl p-6 sm:p-8 relative flex flex-col gap-6 shadow-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto my-auto custom-scrollbar">
       <button class="modal-close-btn absolute right-6 top-6 text-zinc-400 hover:text-white text-xl">&times;</button>
       
       <div class="border-b border-white/5 pb-3">
@@ -564,18 +596,28 @@
           </div>
         </div>
 
+        <!-- Product Image -->
         <div class="flex flex-col gap-2">
-          <label class="text-[10px] uppercase tracking-wider text-zinc-400">Product Image</label>
+          <label class="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">รูปสินค้า (Product Image) *</label>
           
-          <!-- Upload from device -->
-          <div class="flex flex-col gap-1.5">
-            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Upload from device:</span>
-            <input type="file" id="product-image-file" accept="image/*" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-1.5 text-zinc-400 focus:outline-none rounded-none">
+          <div class="flex flex-col sm:flex-row items-center gap-4 p-3 bg-black/40 border border-white/10 rounded-none">
+            <div id="product-image-preview-box" class="w-20 h-24 shrink-0 bg-zinc-900 border border-white/10 flex items-center justify-center overflow-hidden relative">
+              <img id="product-image-preview" src="" class="hidden w-full h-full object-cover">
+              <span id="product-image-placeholder-text" class="text-[9px] text-zinc-600 text-center px-1">ยังไม่มีรูป</span>
+            </div>
+            <div class="flex flex-col gap-2 w-full">
+              <label for="product-image-file" class="cursor-pointer bg-white/10 hover:bg-white/20 text-white text-center py-2 px-4 text-xs font-medium tracking-wider border border-white/20 transition-colors">
+                📁 เลือกรูปจากเครื่อง/มือถือ
+              </label>
+              <input type="file" id="product-image-file" accept="image/*" class="hidden">
+              <button type="button" onclick="toggleUrlInput('product-image-url-wrapper')" class="text-[10px] text-zinc-400 hover:text-white text-left tracking-wide underline decoration-zinc-600">
+                🔗 หรือใช้ลิงก์รูปภาพ (URL)
+              </button>
+            </div>
           </div>
-          
-          <!-- OR Paste URL -->
-          <div class="flex flex-col gap-1.5">
-            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">Or paste an Image URL link:</span>
+
+          <div id="product-image-url-wrapper" class="hidden flex flex-col gap-1 mt-1">
+            <span class="text-[9px] text-zinc-500 uppercase tracking-wider">หรือวางลิงก์รูปภาพ (URL):</span>
             <input type="url" id="product-image-input" class="bg-black/60 border border-white/10 focus:border-white/40 text-xs px-3.5 py-2 text-white focus:outline-none rounded-none" placeholder="https://images.unsplash.com/...">
           </div>
         </div>

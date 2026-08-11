@@ -257,7 +257,10 @@ function renderSettings() {
 
   if (inputTitle) inputTitle.value = settingsState['hero_title'] || '';
   if (inputSubtitle) inputSubtitle.value = settingsState['hero_subtitle'] || '';
-  if (inputImage) inputImage.value = settingsState['hero_image'] || '';
+  if (inputImage) {
+    inputImage.value = settingsState['hero_image'] || '';
+    setImagePreview('setting-hero-preview', 'setting-hero-placeholder-text', settingsState['hero_image'] || '');
+  }
   if (inputTiktok) inputTiktok.value = settingsState['tiktok_link'] || '';
   if (inputLemon8) inputLemon8.value = settingsState['lemon8_link'] || '';
 }
@@ -879,31 +882,74 @@ function populateCollectionDropdowns() {
   }
 }
 
-// Helper function to upload files to Supabase Storage
+// Helper function to compress and convert image file to lightweight Base64 Data URL (fallback)
+function compressImageFile(file, maxWidth = 1200, maxHeight = 1600, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = (err) => reject(err);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = (err) => reject(err);
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Helper function to upload files to Supabase Storage with automatic Base64 Data URL fallback
 async function uploadImageFile(file) {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-  const filePath = `uploads/${fileName}`;
+  try {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
 
-  const { data, error } = await supabaseClient.storage
-    .from('fashion-images')
-    .upload(filePath, file);
+    const { data, error } = await supabaseClient.storage
+      .from('fashion-images')
+      .upload(filePath, file);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  const { data: urlData } = supabaseClient.storage
-    .from('fashion-images')
-    .getPublicUrl(filePath);
+    const { data: urlData } = supabaseClient.storage
+      .from('fashion-images')
+      .getPublicUrl(filePath);
 
-  return urlData.publicUrl;
+    if (urlData && urlData.publicUrl) {
+      return urlData.publicUrl;
+    }
+    throw new Error("Could not retrieve public storage URL.");
+  } catch (storageErr) {
+    console.warn("Supabase Storage upload failed or not configured. Using compressed Base64 Data URL fallback:", storageErr.message);
+    return await compressImageFile(file);
+  }
 }
 
 // Helper function to delete files from Supabase Storage
 async function deleteImageFile(imageUrl) {
   if (!imageUrl) return;
   
-  // Extract path if it is a Supabase public storage URL
-  // format: https://<project>.supabase.co/storage/v1/object/public/fashion-images/uploads/filename.ext
   const storageIndicator = '/storage/v1/object/public/fashion-images/';
   if (imageUrl.includes(storageIndicator)) {
     const filePath = imageUrl.split(storageIndicator)[1];
@@ -918,6 +964,55 @@ async function deleteImageFile(imageUrl) {
         console.error("Failed to delete storage file:", err.message);
       }
     }
+  }
+}
+
+// Toggle URL input wrapper
+window.toggleUrlInput = function(wrapperId) {
+  const wrapper = document.getElementById(wrapperId);
+  if (wrapper) {
+    wrapper.classList.toggle('hidden');
+  }
+};
+
+// Image preview handlers
+function setImagePreview(previewImgId, placeholderTextId, src) {
+  const img = document.getElementById(previewImgId);
+  const text = document.getElementById(placeholderTextId);
+  if (!img || !text) return;
+  if (src) {
+    img.src = src;
+    img.classList.remove('hidden');
+    text.classList.add('hidden');
+  } else {
+    img.src = '';
+    img.classList.add('hidden');
+    text.classList.remove('hidden');
+  }
+}
+
+function setupImageFileInputPreview(fileInputId, previewImgId, placeholderTextId, urlInputId) {
+  const fileInput = document.getElementById(fileInputId);
+  const urlInput = urlInputId ? document.getElementById(urlInputId) : null;
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          setImagePreview(previewImgId, placeholderTextId, evt.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+  if (urlInput) {
+    urlInput.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (val && (!fileInput || !fileInput.files || !fileInput.files.length)) {
+        setImagePreview(previewImgId, placeholderTextId, val);
+      }
+    });
   }
 }
 
@@ -960,6 +1055,12 @@ function setupModalBindings() {
   // Bind filter selector
   document.getElementById('admin-product-filter-collection').addEventListener('change', populateAdminProductsTable);
 
+  // Bind image preview handlers
+  setupImageFileInputPreview('collection-image-file', 'collection-image-preview', 'collection-image-placeholder-text', 'collection-image-input');
+  setupImageFileInputPreview('collection-showcase-file', 'collection-showcase-preview', 'collection-showcase-placeholder-text', 'collection-showcase-input');
+  setupImageFileInputPreview('product-image-file', 'product-image-preview', 'product-image-placeholder-text', 'product-image-input');
+  setupImageFileInputPreview('setting-hero-image-file', 'setting-hero-preview', 'setting-hero-placeholder-text', 'setting-hero-image');
+
   // Form submits
   document.getElementById('collection-form').addEventListener('submit', handleCollectionSubmit);
   document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
@@ -989,6 +1090,12 @@ window.openCollectionModal = function(id = null) {
   const editId = document.getElementById('collection-edit-id');
   const header = document.getElementById('collection-modal-title');
 
+  // Hide URL wrappers by default
+  const imgUrlWrap = document.getElementById('collection-image-url-wrapper');
+  const showcaseUrlWrap = document.getElementById('collection-showcase-url-wrapper');
+  if (imgUrlWrap) imgUrlWrap.classList.add('hidden');
+  if (showcaseUrlWrap) showcaseUrlWrap.classList.add('hidden');
+
   if (id) {
     // EDIT MODE
     header.textContent = "Edit Collection";
@@ -1002,6 +1109,9 @@ window.openCollectionModal = function(id = null) {
     descInput.value = col.description || '';
     if (toneInput) toneInput.value = col.color_tone || '';
 
+    setImagePreview('collection-image-preview', 'collection-image-placeholder-text', col.image);
+    setImagePreview('collection-showcase-preview', 'collection-showcase-placeholder-text', col.showcase_image);
+
     // Show delete button in edit mode
     const deleteBtn = document.getElementById('collection-delete-btn');
     if (deleteBtn) deleteBtn.classList.remove('hidden');
@@ -1014,6 +1124,9 @@ window.openCollectionModal = function(id = null) {
     showcaseInput.value = '';
     descInput.value = '';
     if (toneInput) toneInput.value = '';
+
+    setImagePreview('collection-image-preview', 'collection-image-placeholder-text', '');
+    setImagePreview('collection-showcase-preview', 'collection-showcase-placeholder-text', '');
 
     // Hide delete button in create mode
     const deleteBtn = document.getElementById('collection-delete-btn');
@@ -1086,10 +1199,22 @@ async function handleCollectionSubmit(e) {
     }
 
     if (!image) {
-      alert("Please choose an image file to upload OR paste an image URL.");
+      alert("กรุณาเลือกรูปภาพจากเครื่อง/มือถือ หรือใส่ลิงก์รูปภาพ");
       return;
     }
     let result;
+    const collectionData = { title, image, description };
+    if (showcase_image) collectionData.showcase_image = showcase_image;
+    if (color_tone) collectionData.color_tone = color_tone;
+
+    const saveOperation = async (payload) => {
+      if (id) {
+        return await supabaseClient.from('collections').update(payload).eq('id', id);
+      } else {
+        return await supabaseClient.from('collections').insert([payload]);
+      }
+    };
+
     if (id) {
       // Find old collection image to clean up
       const oldCol = collectionsState.find(c => c.id === id);
@@ -1100,17 +1225,23 @@ async function handleCollectionSubmit(e) {
       if (oldCol && oldCol.showcase_image && oldCol.showcase_image !== showcase_image) {
         await deleteImageFile(oldCol.showcase_image);
       }
+    }
 
-      // UPDATE
-      result = await supabaseClient
-        .from('collections')
-        .update({ title, image, showcase_image: showcase_image || null, color_tone: color_tone || null, description })
-        .eq('id', id);
-    } else {
-      // INSERT
-      result = await supabaseClient
-        .from('collections')
-        .insert([{ title, image, showcase_image: showcase_image || null, color_tone: color_tone || null, description }]);
+    // Try initial save
+    result = await saveOperation(collectionData);
+
+    // Automatic Fallback 1: If 'color_tone' column is missing in Supabase DB schema cache
+    if (result.error && (result.error.message.includes('color_tone') || result.error.message.includes('schema cache'))) {
+      console.warn("Retrying collection save without 'color_tone' column...");
+      delete collectionData.color_tone;
+      result = await saveOperation(collectionData);
+    }
+
+    // Automatic Fallback 2: If 'showcase_image' column is missing in Supabase DB schema cache
+    if (result.error && (result.error.message.includes('showcase_image') || result.error.message.includes('schema cache'))) {
+      console.warn("Retrying collection save without 'showcase_image' column...");
+      delete collectionData.showcase_image;
+      result = await saveOperation(collectionData);
     }
 
     if (result.error) throw result.error;
@@ -1164,6 +1295,9 @@ window.openProductModal = function(id = null) {
   const editId = document.getElementById('product-edit-id');
   const header = document.getElementById('product-modal-title');
 
+  const prodUrlWrap = document.getElementById('product-image-url-wrapper');
+  if (prodUrlWrap) prodUrlWrap.classList.add('hidden');
+
   if (collectionsState.length === 0) {
     alert("Please create a collection before creating a product.");
     return;
@@ -1183,6 +1317,8 @@ window.openProductModal = function(id = null) {
     imageInput.value = prod.image;
     linkInput.value = prod.affiliate_link;
 
+    setImagePreview('product-image-preview', 'product-image-placeholder-text', prod.image);
+
     // Show delete button in edit mode
     const deleteBtn = document.getElementById('product-delete-btn');
     if (deleteBtn) deleteBtn.classList.remove('hidden');
@@ -1197,6 +1333,8 @@ window.openProductModal = function(id = null) {
     priceInput.value = '';
     imageInput.value = '';
     linkInput.value = '';
+
+    setImagePreview('product-image-preview', 'product-image-placeholder-text', '');
 
     // Hide delete button in create mode
     const deleteBtn = document.getElementById('product-delete-btn');
@@ -1265,7 +1403,7 @@ async function handleProductSubmit(e) {
     }
 
     if (!image) {
-      alert("Please choose an image file to upload OR paste an image URL.");
+      alert("กรุณาเลือกรูปภาพสินค้าจากเครื่อง/มือถือ หรือใส่ลิงก์รูปภาพ");
       return;
     }
     let result;
