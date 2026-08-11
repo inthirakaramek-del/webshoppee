@@ -168,6 +168,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- CORE UTILITIES ---
+function naturalSortCompare(aStr, bStr) {
+  if (!aStr && !bStr) return 0;
+  if (!aStr) return -1;
+  if (!bStr) return 1;
+  return aStr.localeCompare(bStr, undefined, { numeric: true, sensitivity: 'base' });
+}
+
 function showSyncIndicator() {
   const sync = document.getElementById('sync-indicator');
   sync.classList.remove('opacity-0');
@@ -273,7 +280,7 @@ async function fetchCollections() {
       .order('title', { ascending: true });
     
     if (error) throw error;
-    collectionsState = data || [];
+    collectionsState = (data || []).sort((a, b) => naturalSortCompare(a.title, b.title));
     populateCollectionDropdowns();
   } catch (error) {
     console.error('Error fetching collections:', error.message);
@@ -288,7 +295,7 @@ async function fetchProducts() {
       .order('name', { ascending: true });
     
     if (error) throw error;
-    productsState = data || [];
+    productsState = (data || []).sort((a, b) => naturalSortCompare(a.name, b.name));
   } catch (error) {
     console.error('Error fetching products:', error.message);
   }
@@ -442,15 +449,19 @@ function renderHome() {
     heroBlock.classList.add('hidden');
 
     // Filter collections and products matching search query
-    const filteredCollections = collectionsState.filter(c => 
-      c.title.toUpperCase().includes(searchQuery) || 
-      (c.description && c.description.toUpperCase().includes(searchQuery))
-    );
+    const filteredCollections = collectionsState
+      .filter(c => 
+        c.title.toUpperCase().includes(searchQuery) || 
+        (c.description && c.description.toUpperCase().includes(searchQuery))
+      )
+      .sort((a, b) => naturalSortCompare(a.title, b.title));
 
-    const filteredProducts = productsState.filter(p => 
-      p.name.toUpperCase().includes(searchQuery) || 
-      p.category.toUpperCase().includes(searchQuery)
-    );
+    const filteredProducts = productsState
+      .filter(p => 
+        p.name.toUpperCase().includes(searchQuery) || 
+        p.category.toUpperCase().includes(searchQuery)
+      )
+      .sort((a, b) => naturalSortCompare(a.name, b.name));
 
     // If nothing found
     if (filteredCollections.length === 0 && filteredProducts.length === 0) {
@@ -487,7 +498,7 @@ function renderHome() {
       return;
     }
 
-    collectionsState.forEach(col => {
+    collectionsState.sort((a, b) => naturalSortCompare(a.title, b.title)).forEach(col => {
       grid.appendChild(createCollectionCard(col, false));
     });
   }
@@ -613,7 +624,9 @@ function renderCollectionDetail() {
   // Render Products matching collection
   grid.innerHTML = '';
   
-  const filteredProducts = productsState.filter(p => p.collection_id === activeCollectionId);
+  const filteredProducts = productsState
+    .filter(p => p.collection_id === activeCollectionId)
+    .sort((a, b) => naturalSortCompare(a.name, b.name));
   
   if (filteredProducts.length === 0) {
     grid.innerHTML = `
@@ -642,7 +655,9 @@ function renderCategoryDetail() {
   grid.innerHTML = '';
 
   // Filter products by category across all collections
-  const filteredProducts = productsState.filter(p => p.category === activeCategoryFilter);
+  const filteredProducts = productsState
+    .filter(p => p.category === activeCategoryFilter)
+    .sort((a, b) => naturalSortCompare(a.name, b.name));
 
   if (filteredProducts.length === 0) {
     grid.innerHTML = `
@@ -783,7 +798,7 @@ function populateAdminCollectionsTable() {
     return;
   }
 
-  collectionsState.forEach(col => {
+  collectionsState.sort((a, b) => naturalSortCompare(a.title, b.title)).forEach(col => {
     const tr = document.createElement('tr');
     tr.className = "hover:bg-zinc-950/40";
     tr.innerHTML = `
@@ -813,6 +828,8 @@ function populateAdminProductsTable() {
   if (filterVal !== 'All') {
     filtered = filtered.filter(p => p.collection_id === filterVal);
   }
+
+  filtered.sort((a, b) => naturalSortCompare(a.name, b.name));
 
   if (filtered.length === 0) {
     body.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-zinc-600 uppercase tracking-widest">No Products Found</td></tr>`;
@@ -859,7 +876,7 @@ function populateCollectionDropdowns() {
   dropdown.innerHTML = '';
   filterDropdown.innerHTML = '<option value="All">All Collections</option>';
 
-  collectionsState.forEach(col => {
+  collectionsState.sort((a, b) => naturalSortCompare(a.title, b.title)).forEach(col => {
     // Fill product modal dropdown
     const option = document.createElement('option');
     option.value = col.id;
